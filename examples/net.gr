@@ -1,0 +1,6 @@
+import Net from "lunatic/net"
+
+match (Net.resolve("google.com:80")) {
+  Ok(addresses) => print(addresses),
+  Err(err) => print(err),
+}

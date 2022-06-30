@@ -1,0 +1,161 @@
+import Pervasives from "pervasives"
+import WasmI32 from "runtime/unsafe/wasmi32"
+import WasmI64 from "runtime/unsafe/wasmi64"
+import Memory from "runtime/unsafe/memory"
+import DataStructures from "runtime/dataStructures"
+import BigInt from "bigint"
+
+import foreign wasm resolve: (
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 from "lunatic::networking"
+import foreign wasm resolve_next: (
+  WasmI64,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as resolveNext from "lunatic::networking"
+import foreign wasm drop_dns_iterator: WasmI64 -> Void as dropDNSIterator from "lunatic::networking"
+
+export enum IpType {
+  IPv4(Int32),
+  IPv6(BigInt),
+}
+
+export record IpAddress {
+  address: IpType,
+  port: Int32,
+  flowInfo: Int32,
+  scopeId: Int32,
+}
+
+@unsafe
+let ipPointer = Memory.malloc(30n)
+@unsafe
+let _ADDRESS_OFFSET = 0n
+@unsafe
+let _TYPE_OFFSET = 16n
+@unsafe
+let _PORT_OFFSET = 20n
+@unsafe
+let _FLOW_INFO_OFFSET = 22n
+@unsafe
+let _SCOPE_ID_OFFSET = 26n
+
+@unsafe
+let resolveDNSIterator = id => {
+  let add = (+)
+  let (+) = WasmI32.add
+
+  let mut addresses = []
+
+  while (
+    WasmI32.eqz(
+      resolveNext(
+        id,
+        ipPointer + _TYPE_OFFSET,
+        ipPointer + _ADDRESS_OFFSET,
+        ipPointer + _PORT_OFFSET,
+        ipPointer + _FLOW_INFO_OFFSET,
+        ipPointer + _SCOPE_ID_OFFSET
+      )
+    )
+  ) {
+    let address = match (WasmI32.load(ipPointer, _TYPE_OFFSET)) {
+      4n => {
+        let (<<) = WasmI32.shl
+        let (|) = WasmI32.or
+
+        // These bytes are big endian, but WebAssembly is little endian
+
+        let mut ip = 0n
+        ip = ip | WasmI32.load8U(ipPointer, _ADDRESS_OFFSET) << 24n
+        ip = ip | WasmI32.load8U(ipPointer, _ADDRESS_OFFSET + 1n) << 16n
+        ip = ip | WasmI32.load8U(ipPointer, _ADDRESS_OFFSET + 2n) << 8n
+        ip = ip | WasmI32.load8U(ipPointer, _ADDRESS_OFFSET + 3n)
+
+        IPv4(WasmI32.toGrain(DataStructures.newInt32(ip)))
+      },
+      6n => {
+        let (<<) = WasmI64.shl
+        let (|) = WasmI64.or
+
+        // These bytes are big endian, but WebAssembly is little endian
+
+        let mut high = 0N
+        high = high | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET) << 56N
+        high = high | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET + 1n) << 48N
+        high = high | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET + 2n) << 40N
+        high = high | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET + 3n) << 32N
+        high = high | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET + 4n) << 24N
+        high = high | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET + 5n) << 16N
+        high = high | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET + 6n) << 8N
+        high = high | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET + 7n)
+
+        let mut low = 0N
+        low = low | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET + 8n) << 56N
+        low = low | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET + 9n) << 48N
+        low = low | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET + 10n) << 40N
+        low = low | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET + 11n) << 32N
+        low = low | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET + 12n) << 24N
+        low = low | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET + 13n) << 16N
+        low = low | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET + 14n) << 8N
+        low = low | WasmI64.load8U(ipPointer, _ADDRESS_OFFSET + 15n)
+
+        let high = WasmI32.toGrain(DataStructures.newInt64(high)): Number
+        let low = WasmI32.toGrain(DataStructures.newInt64(low)): Number
+
+        IPv6(BigInt.fromNumber(add(high * 0x100000000, low)))
+      },
+      _ => fail "unknown IP type",
+    }
+
+    let port = WasmI32.toGrain(
+      DataStructures.newInt32(WasmI32.load16U(ipPointer, _PORT_OFFSET))
+    ): Int32
+
+    let flowInfo = WasmI32.toGrain(
+      DataStructures.newInt32(WasmI32.load16U(ipPointer, _FLOW_INFO_OFFSET))
+    ): Int32
+
+    let scopeId = WasmI32.toGrain(
+      DataStructures.newInt32(WasmI32.load16U(ipPointer, _SCOPE_ID_OFFSET))
+    ): Int32
+
+    let address = { address, port, flowInfo, scopeId }
+
+    addresses = [address, ...addresses]
+  }
+
+  dropDNSIterator(id)
+
+  addresses
+}
+
+@unsafe
+let _ID_PTR = Memory.malloc(8n)
+
+@unsafe
+export let resolveTimeout = (host: String, timeout: Int32) => {
+  let hostPtr = WasmI32.add(WasmI32.fromGrain(host), 8n)
+  let hostSize = WasmI32.load(WasmI32.fromGrain(host), 4n)
+
+  let timeout = WasmI32.load(WasmI32.fromGrain(timeout), 8n)
+
+  let result = resolve(hostPtr, hostSize, timeout, _ID_PTR)
+
+  if (WasmI32.eqz(result)) {
+    let id = WasmI64.load(_ID_PTR, 0n)
+    Ok(resolveDNSIterator(id))
+  } else {
+    Err("unable to resolve DNS")
+  }
+}
+
+export let resolve = host => {
+  resolveTimeout(host, 0l)
+}
