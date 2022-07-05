@@ -1,0 +1,202 @@
+import WasmI32 from "runtime/unsafe/wasmi32"
+import WasmI64 from "runtime/unsafe/wasmi64"
+import Memory from "runtime/unsafe/memory"
+import DataStructures from "runtime/dataStructures"
+import Tags from "runtime/unsafe/tags"
+
+import foreign wasm create_config: () -> WasmI64 as createConfig from "lunatic::process"
+
+import foreign wasm drop_config: WasmI64 -> Void as dropConfig from "lunatic::process"
+
+import foreign wasm allow_namespace: (
+  WasmI64,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as allowNamespace from "lunatic::process"
+
+import foreign wasm preopen_dir: (
+  WasmI64,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as preopenDir from "lunatic::process"
+
+import foreign wasm create_environment: (
+  WasmI64,
+  WasmI32,
+) -> WasmI32 as createEnvironment from "lunatic::process"
+
+import foreign wasm create_remote_environment: (
+  WasmI64,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as createRemoteEnvironment from "lunatic::process"
+
+import foreign wasm drop_environment: WasmI64 -> Void as dropEnvironment from "lunatic::process"
+
+import foreign wasm add_plugin: (
+  WasmI64,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as addPlugin from "lunatic::process"
+
+import foreign wasm add_module: (
+  WasmI64,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as addModule from "lunatic::process"
+
+import foreign wasm add_this_module: (
+  WasmI64,
+  WasmI32,
+) -> WasmI32 as addThisModule from "lunatic::process"
+
+import foreign wasm drop_module: WasmI64 -> Void as dropModule from "lunatic::process"
+
+import foreign wasm spawn: (
+  WasmI64,
+  WasmI64,
+  WasmI64,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as spawn from "lunatic::process"
+
+import foreign wasm inherit_spawn: (
+  WasmI64,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as inheritSpawn from "lunatic::process"
+
+import foreign wasm drop_process: WasmI64 -> Void as dropProcess from "lunatic::process"
+
+import foreign wasm clone_process: WasmI64 -> WasmI64 as cloneProcess from "lunatic::process"
+
+import foreign wasm sleep_ms: WasmI64 -> Void as sleepMs from "lunatic::process"
+
+import foreign wasm die_when_link_dies: WasmI32 -> Void as dieWhenLinkDies from "lunatic::process"
+
+import foreign wasm this: () -> WasmI64 as this from "lunatic::process"
+
+import foreign wasm id: (WasmI64, WasmI32) -> Void as id from "lunatic::process"
+
+import foreign wasm this_env: () -> WasmI64 as thisEnv from "lunatic::process"
+
+import foreign wasm link: (
+  WasmI64,
+  WasmI64,
+) -> Void as link from "lunatic::process"
+
+import foreign wasm unlink: WasmI64 -> Void as unlink from "lunatic::process"
+
+import foreign wasm register: (
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI64,
+  WasmI64,
+) -> WasmI32 as register from "lunatic::process"
+
+import foreign wasm unregister: (
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI64,
+) -> WasmI32 as unregister from "lunatic::process"
+
+import foreign wasm lookup: (
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as lookup from "lunatic::process"
+
+type Process = Int64
+
+@unsafe
+let idPtr = Memory.malloc(8n)
+
+/**
+ * Cause the current process to sleep for the given number of milliseconds.
+ * 
+ * @param ms: The number of milliseconds to sleep
+ */
+@unsafe
+export let sleep = (ms: Int64) => {
+  let ms = WasmI64.load(WasmI32.fromGrain(ms), 8n)
+  sleepMs(ms)
+}
+
+@unsafe
+export let this = () => {
+  WasmI32.toGrain(DataStructures.newInt64(this())): Process
+}
+
+@unsafe
+export let uuid = (pid: Int64) => {
+  let uuid = DataStructures.allocateString(16n)
+  id(WasmI64.load(WasmI32.fromGrain(pid), 8n), WasmI32.add(uuid, 8n))
+  WasmI32.toGrain(uuid): String
+}
+
+@unsafe
+export let inheritSpawn = (func: () -> Void) => {
+  let funcName = WasmI32.fromGrain("__lunatic_bootstrap")
+
+  let params = Memory.malloc(17n)
+  WasmI32.store8(params, 0x7Fn, 0n)
+  WasmI32.store(params, WasmI32.load(WasmI32.fromGrain(func), 8n), 1n)
+
+  let result = spawn(
+    0N,
+    -1N,
+    -1N,
+    WasmI32.add(funcName, 8n),
+    WasmI32.load(funcName, 4n),
+    params,
+    17n,
+    idPtr
+  )
+
+  let spawnId = WasmI32.toGrain(
+    DataStructures.newInt64(WasmI64.load(idPtr, 0n))
+  )
+
+  if (WasmI32.eqz(result)) {
+    // Message.createData(-1L, 4L)
+
+    // let payload = DataStructures.allocateBytes(4n)
+    // WasmI32.store(payload, WasmI32.load(WasmI32.fromGrain(func), 8n), 8n)
+
+    // Message.writeData(WasmI32.toGrain(payload): Bytes)
+    // Message.send(spawnId)
+
+    Ok(spawnId: Process)
+  } else {
+    Err(spawnId: Int64)
+  }
+}
+
+@unsafe
+export let __lunatic_bootstrap = (funcPtr: WasmI32) => {
+  let closure = Memory.malloc(16n)
+  WasmI32.store(closure, Tags._GRAIN_LAMBDA_HEAP_TAG, 0n)
+  WasmI32.store(closure, 0n, 4n)
+  WasmI32.store(closure, funcPtr, 8n)
+  WasmI32.store(closure, 0n, 12n)
+
+  let func = WasmI32.toGrain(closure): () -> Void
+
+  func()
+}

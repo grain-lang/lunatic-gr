@@ -1,0 +1,33 @@
+import Bytes from "bytes"
+import Int64 from "int64"
+import Result from "result"
+import Process from "lunatic/process"
+import Mailbox from "lunatic/mailbox"
+
+record SomeData<a> {
+  key: String,
+  value: a,
+}
+
+let mailbox = Mailbox.create()
+
+export let _start = () => {
+  print("[main proccess] Hello from the main process!")
+
+  let child = Result.unwrap(
+    Process.inheritSpawn(() => {
+      print("[subproccess] 👋 from spawned process!")
+      print("[subprocess] receiving some data...")
+      let data = Result.unwrap(Mailbox.receive(200l, mailbox))
+      print(data)
+    })
+  )
+
+  print("[main proccess] sending some data...")
+
+  Mailbox.send(child, { key: "datakey", value: 42 }, mailbox)
+
+  Process.sleep(100L)
+}
+
+export let __lunatic_bootstrap = Process.__lunatic_bootstrap
