@@ -2,31 +2,31 @@ import Bytes from "bytes"
 import Int64 from "int64"
 import Result from "result"
 import Process from "lunatic/process"
-import Mailbox from "lunatic/mailbox"
 
 record SomeData<a> {
   key: String,
   value: a,
 }
 
-let mailbox = Mailbox.create()
+let mailbox = Process.createMailbox()
 
 export let _start = () => {
-  print("[main proccess] Hello from the main process!")
+  let localdata = { key: "localdata", value: 54321 }
 
   let child = Result.unwrap(
-    Process.inheritSpawn(() => {
-      print("[subproccess] 👋 from spawned process!")
+    Process.spawn(() => {
+      print("[subprocess] 👋 from spawned process!")
       print("[subprocess] receiving some data...")
-      let data = Result.unwrap(Mailbox.receive(200l, mailbox))
-      print(data)
+      print(Result.unwrap(Process.receive(mailbox)))
+      print("[subprocess] data within the closure:")
+      print(localdata)
     })
   )
 
+  print("[main proccess] Hello from the main process!")
   print("[main proccess] sending some data...")
 
-  Mailbox.send(child, { key: "datakey", value: 42 }, mailbox)
-
+  Process.send(child, { key: "datakey", value: 42 }, mailbox)
   Process.sleep(100L)
 }
 

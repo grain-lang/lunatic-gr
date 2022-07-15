@@ -4,6 +4,12 @@ import Memory from "runtime/unsafe/memory"
 import DataStructures from "runtime/dataStructures"
 import Tags from "runtime/unsafe/tags"
 
+import Array from "array"
+import Bytes from "bytes"
+import Int64 from "int64"
+import Marshal from "marshal"
+import Result from "result"
+
 import foreign wasm create_config: () -> WasmI64 as createConfig from "lunatic::process"
 
 import foreign wasm drop_config: WasmI64 -> Void as dropConfig from "lunatic::process"
@@ -122,7 +128,133 @@ import foreign wasm lookup: (
   WasmI32,
 ) -> WasmI32 as lookup from "lunatic::process"
 
+import foreign wasm create_data: (
+  WasmI64,
+  WasmI64,
+) -> Void as createData from "lunatic::message"
+import foreign wasm write_data: (
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as writeData from "lunatic::message"
+import foreign wasm read_data: (
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as readData from "lunatic::message"
+import foreign wasm seek_data: WasmI64 -> Void as seekData from "lunatic::message"
+import foreign wasm get_tag: () -> WasmI64 as getTag from "lunatic::message"
+import foreign wasm data_size: () -> WasmI64 as dataSize from "lunatic::message"
+import foreign wasm send: WasmI64 -> Void from "lunatic::message"
+import foreign wasm receive: (
+  WasmI32,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 from "lunatic::message"
+
 type Process = Int64
+export exception ReceiveTimeout
+export exception MarshalError(String)
+
+type Mailbox<a> = Int64
+
+/* Tags 0 - 127 are reserved for special purposes. */
+
+@unsafe
+let mut currentTag = 128N
+
+let bootstrapMailbox: Mailbox<() -> Void> = 1L
+
+@unsafe
+export let createMailbox = () => {
+  let tag = currentTag
+  currentTag = WasmI64.add(currentTag, 1N)
+  WasmI32.toGrain(DataStructures.newInt64(tag)): Mailbox<a>
+}
+
+@unsafe
+let createData = (tag: Int64, capacity: Int64) => {
+  createData(
+    WasmI64.load(WasmI32.fromGrain(tag), 8n),
+    WasmI64.load(WasmI32.fromGrain(capacity), 8n)
+  )
+}
+
+@unsafe
+let writeData = (bytes: Bytes) => {
+  let bytesPtr = WasmI32.fromGrain(bytes)
+  let bytesWritten = writeData(
+    WasmI32.add(bytesPtr, 8n),
+    WasmI32.load(bytesPtr, 4n)
+  )
+  WasmI32.toGrain(DataStructures.newInt32(bytesWritten)): Int32
+}
+
+@unsafe
+let readData = (bytes: Bytes) => {
+  let bytesPtr = WasmI32.fromGrain(bytes)
+  let bytesRead = readData(
+    WasmI32.add(bytesPtr, 8n),
+    WasmI32.load(bytesPtr, 4n)
+  )
+  WasmI32.toGrain(DataStructures.newInt32(bytesRead)): Int32
+}
+
+@unsafe
+let seekData = (position: Int64) => {
+  seekData(WasmI64.load(WasmI32.fromGrain(position), 8n))
+}
+
+@unsafe
+let getTag = () => {
+  WasmI32.toGrain(DataStructures.newInt64(getTag())): Int64
+}
+
+@unsafe
+let dataSize = () => {
+  WasmI32.toGrain(DataStructures.newInt64(dataSize())): Int64
+}
+
+@unsafe
+let send = (pid: Process) => {
+  send(WasmI64.load(WasmI32.fromGrain(pid), 8n))
+}
+
+@unsafe
+let receive = (tags: Option<List<Int64>>, timeout: Int32) => {
+  let tags = match (tags) {
+    Some(tags) => Array.fromList(tags),
+    None => [>],
+  }
+
+  let count = DataStructures.untagSimpleNumber(Array.length(tags))
+
+  let tagsBuf = Memory.malloc(WasmI32.mul(count, 8n))
+
+  for (let mut i = 0n; WasmI32.ltU(i, count); i = WasmI32.add(i, 1n)) {
+    WasmI64.store(
+      tagsBuf,
+      WasmI64.load(
+        WasmI32.fromGrain(tags[DataStructures.tagSimpleNumber(i)]),
+        8n
+      ),
+      WasmI32.mul(i, 8n)
+    )
+  }
+
+  let result = receive(
+    tagsBuf,
+    count,
+    WasmI32.load(WasmI32.fromGrain(timeout), 8n)
+  )
+
+  match (result) {
+    0n => {
+      Ok(void)
+    },
+    9027n => Err(ReceiveTimeout),
+    1n => fail "can't recieve link failed message",
+    _ => fail "unknown receive error",
+  }
+}
 
 @unsafe
 let idPtr = Memory.malloc(8n)
@@ -150,13 +282,38 @@ export let uuid = (pid: Int64) => {
   WasmI32.toGrain(uuid): String
 }
 
-@unsafe
-export let inheritSpawn = (func: () -> Void) => {
-  let funcName = WasmI32.fromGrain("__lunatic_bootstrap")
+export let send: (Process, a, Mailbox<a>) -> Void =
+  (
+    process,
+    data,
+    mailbox,
+  ) => {
+  let payload = Marshal.marshal(data)
+  createData(mailbox, Int64.fromNumber(Bytes.length(payload)))
+  writeData(payload)
+  send(process)
+}
 
-  let params = Memory.malloc(17n)
-  WasmI32.store8(params, 0x7Fn, 0n)
-  WasmI32.store(params, WasmI32.load(WasmI32.fromGrain(func), 8n), 1n)
+export let receiveTimeout: (Int32, Mailbox<a>) -> Result<a, Exception> =
+  (
+    timeout,
+    mailbox,
+  ) => {
+  Result.flatMap((_) => {
+    let size = dataSize()
+    let buf = Bytes.make(Int64.toNumber(size))
+    readData(buf)
+    Result.mapErr(msg => MarshalError(msg), Marshal.unmarshal(buf))
+  }, receive(Some([mailbox]), timeout))
+}
+
+export let receive = mailbox => {
+  receiveTimeout(0l, mailbox)
+}
+
+@unsafe
+export let spawn = (func: () -> Void) => {
+  let funcName = WasmI32.fromGrain("__lunatic_bootstrap")
 
   let result = spawn(
     0N,
@@ -164,8 +321,8 @@ export let inheritSpawn = (func: () -> Void) => {
     -1N,
     WasmI32.add(funcName, 8n),
     WasmI32.load(funcName, 4n),
-    params,
-    17n,
+    0n,
+    0n,
     idPtr
   )
 
@@ -174,29 +331,25 @@ export let inheritSpawn = (func: () -> Void) => {
   )
 
   if (WasmI32.eqz(result)) {
-    // Message.createData(-1L, 4L)
+    let process = spawnId: Process
+    send(process, func, bootstrapMailbox)
 
-    // let payload = DataStructures.allocateBytes(4n)
-    // WasmI32.store(payload, WasmI32.load(WasmI32.fromGrain(func), 8n), 8n)
-
-    // Message.writeData(WasmI32.toGrain(payload): Bytes)
-    // Message.send(spawnId)
-
-    Ok(spawnId: Process)
+    Ok(process)
   } else {
     Err(spawnId: Int64)
   }
 }
 
 @unsafe
-export let __lunatic_bootstrap = (funcPtr: WasmI32) => {
-  let closure = Memory.malloc(16n)
-  WasmI32.store(closure, Tags._GRAIN_LAMBDA_HEAP_TAG, 0n)
-  WasmI32.store(closure, 0n, 4n)
-  WasmI32.store(closure, funcPtr, 8n)
-  WasmI32.store(closure, 0n, 12n)
-
-  let func = WasmI32.toGrain(closure): () -> Void
-
-  func()
+export let __lunatic_bootstrap = () => {
+  // The mailbox type is not propagated within this module for some reason so
+  // we use an explicit type annotation.
+  // https://github.com/grain-lang/grain/issues/1356
+  let result: Result<() -> Void, Exception> = receive(bootstrapMailbox)
+  match (result) {
+    Ok(func) => func(),
+    Err(ReceiveTimeout) => fail "didn't receive bootstrap message",
+    Err(MarshalError(_)) => fail "corrupted bootsrap message",
+    Err(_) => fail "unknown error",
+  }
 }
