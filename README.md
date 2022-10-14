@@ -1,6 +1,6 @@
 # lunatic-gr
 
-Grain bindings to [Lunatic](lunatic.solutions).
+Grain bindings to [Lunatic](https://lunatic.solutions).
 
 ## Buidling the examples
 
