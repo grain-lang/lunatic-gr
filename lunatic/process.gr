@@ -164,7 +164,7 @@ export let sleep = (ms: Int64) => {
 export let this = () => {
   let nodeId = Conv.toInt64(nodeId())
   let pid = Conv.toInt64(processId())
-  { nodeId, pid }
+  { nodeId, pid }: Process
 }
 
 export let send: (Process, a, Mailbox<a>) -> Void =

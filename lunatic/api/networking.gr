@@ -116,8 +116,6 @@ export foreign wasm set_write_timeout: (WasmI64, WasmI64) -> Void as setWriteTim
 export foreign wasm get_write_timeout: (WasmI64) -> WasmI64 as getWriteTimeout from "lunatic::networking";
 export foreign wasm set_peek_timeout: (WasmI64, WasmI64) -> Void as setPeekTimeout from "lunatic::networking"
 export foreign wasm get_peek_timeout: (WasmI64) -> WasmI64 as getPeekTimeout from "lunatic::networking";
-
-// tls
 export foreign wasm tls_bind: (
   WasmI32,
   WasmI32,
