@@ -1,25 +1,14 @@
 import Pervasives from "pervasives"
+import Conv from "runtime/unsafe/conv"
 import WasmI32 from "runtime/unsafe/wasmi32"
 import WasmI64 from "runtime/unsafe/wasmi64"
 import Memory from "runtime/unsafe/memory"
 import DataStructures from "runtime/dataStructures"
+import NumberUtils from "runtime/numberUtils"
 import BigInt from "bigint"
+import String from "string"
 
-import foreign wasm resolve: (
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-) -> WasmI32 from "lunatic::networking"
-import foreign wasm resolve_next: (
-  WasmI64,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-) -> WasmI32 as resolveNext from "lunatic::networking"
-import foreign wasm drop_dns_iterator: WasmI64 -> Void as dropDNSIterator from "lunatic::networking"
+import { resolve, resolveNext, dropDnsIterator } from "./api/networking"
 
 export enum IpType {
   IPv4(Int32),
@@ -131,7 +120,7 @@ let resolveDNSIterator = id => {
     addresses = [address, ...addresses]
   }
 
-  dropDNSIterator(id)
+  dropDnsIterator(id)
 
   addresses
 }
@@ -140,11 +129,11 @@ let resolveDNSIterator = id => {
 let _ID_PTR = Memory.malloc(8n)
 
 @unsafe
-export let resolveTimeout = (host: String, timeout: Int32) => {
+export let resolveTimeout = (host: String, timeout: Int64) => {
   let hostPtr = WasmI32.add(WasmI32.fromGrain(host), 8n)
   let hostSize = WasmI32.load(WasmI32.fromGrain(host), 4n)
 
-  let timeout = WasmI32.load(WasmI32.fromGrain(timeout), 8n)
+  let timeout = WasmI64.load(WasmI32.fromGrain(timeout), 8n)
 
   let result = resolve(hostPtr, hostSize, timeout, _ID_PTR)
 
@@ -152,10 +141,13 @@ export let resolveTimeout = (host: String, timeout: Int32) => {
     let id = WasmI64.load(_ID_PTR, 0n)
     Ok(resolveDNSIterator(id))
   } else {
-    Err("unable to resolve DNS")
+    match (result) {
+      9027n => Err("timed out"),
+      _ => Err("unknown error"),
+    }
   }
 }
 
-export let resolve = host => {
-  resolveTimeout(host, 0l)
+export let resolve = (host: String) => {
+  resolveTimeout(host, -1L)
 }

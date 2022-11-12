@@ -1,9 +1,7 @@
 import WasmI32 from "runtime/unsafe/wasmi32"
 import { newInt32 } from "runtime/dataStructures"
 
-import foreign wasm major: () -> WasmI32 from "lunatic::version"
-import foreign wasm minor: () -> WasmI32 from "lunatic::version"
-import foreign wasm patch: () -> WasmI32 from "lunatic::version"
+import { major, minor, patch } from "./api/version"
 
 @unsafe
 export let major = () => {

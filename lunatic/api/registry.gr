@@ -1,0 +1,11 @@
+import WasmI32 from "runtime/unsafe/wasmi32"
+import WasmI64 from "runtime/unsafe/wasmi64"
+
+export foreign wasm put: (WasmI32, WasmI32, WasmI64, WasmI64) -> Void as put from "lunatic::registry"
+export foreign wasm get: (
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as get from "lunatic::registry"
+export foreign wasm remove: (WasmI32, WasmI32) -> Void as remove from "lunatic::registry"

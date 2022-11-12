@@ -1,5 +1,6 @@
 import WasmI32 from "runtime/unsafe/wasmi32"
 import WasmI64 from "runtime/unsafe/wasmi64"
+import Conv from "runtime/unsafe/conv"
 import Memory from "runtime/unsafe/memory"
 import DataStructures from "runtime/dataStructures"
 import Tags from "runtime/unsafe/tags"
@@ -10,147 +11,36 @@ import Int64 from "int64"
 import Marshal from "marshal"
 import Result from "result"
 
-import foreign wasm create_config: () -> WasmI64 as createConfig from "lunatic::process"
+import { nodeId } from "./api/distributed"
+import {
+  compileModule,
+  dropModule,
+  createConfig,
+  dropConfig,
+  configSetMaxMemory,
+  configGetMaxMemory,
+  configSetMaxFuel,
+  configGetMaxFuel,
+  configCanCompileModules,
+  configSetCanCompileModules,
+  configCanCreateConfigs,
+  configSetCanCreateConfigs,
+  configCanSpawnProcesses,
+  configSetCanSpawnProcesses,
+  spawn,
+  sleepMs,
+  dieWhenLinkDies,
+  processId,
+  link,
+  unlink,
+  kill,
+} from "./api/process"
+import { createData, writeData, readData, seekData, getTag, dataSize, send, receive } from "./api/message"
 
-import foreign wasm drop_config: WasmI64 -> Void as dropConfig from "lunatic::process"
-
-import foreign wasm allow_namespace: (
-  WasmI64,
-  WasmI32,
-  WasmI32,
-) -> WasmI32 as allowNamespace from "lunatic::process"
-
-import foreign wasm preopen_dir: (
-  WasmI64,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-) -> WasmI32 as preopenDir from "lunatic::process"
-
-import foreign wasm create_environment: (
-  WasmI64,
-  WasmI32,
-) -> WasmI32 as createEnvironment from "lunatic::process"
-
-import foreign wasm create_remote_environment: (
-  WasmI64,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-) -> WasmI32 as createRemoteEnvironment from "lunatic::process"
-
-import foreign wasm drop_environment: WasmI64 -> Void as dropEnvironment from "lunatic::process"
-
-import foreign wasm add_plugin: (
-  WasmI64,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-) -> WasmI32 as addPlugin from "lunatic::process"
-
-import foreign wasm add_module: (
-  WasmI64,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-) -> WasmI32 as addModule from "lunatic::process"
-
-import foreign wasm add_this_module: (
-  WasmI64,
-  WasmI32,
-) -> WasmI32 as addThisModule from "lunatic::process"
-
-import foreign wasm drop_module: WasmI64 -> Void as dropModule from "lunatic::process"
-
-import foreign wasm spawn: (
-  WasmI64,
-  WasmI64,
-  WasmI64,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-) -> WasmI32 as spawn from "lunatic::process"
-
-import foreign wasm inherit_spawn: (
-  WasmI64,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-) -> WasmI32 as inheritSpawn from "lunatic::process"
-
-import foreign wasm drop_process: WasmI64 -> Void as dropProcess from "lunatic::process"
-
-import foreign wasm clone_process: WasmI64 -> WasmI64 as cloneProcess from "lunatic::process"
-
-import foreign wasm sleep_ms: WasmI64 -> Void as sleepMs from "lunatic::process"
-
-import foreign wasm die_when_link_dies: WasmI32 -> Void as dieWhenLinkDies from "lunatic::process"
-
-import foreign wasm this: () -> WasmI64 as this from "lunatic::process"
-
-import foreign wasm id: (WasmI64, WasmI32) -> Void as id from "lunatic::process"
-
-import foreign wasm this_env: () -> WasmI64 as thisEnv from "lunatic::process"
-
-import foreign wasm link: (
-  WasmI64,
-  WasmI64,
-) -> Void as link from "lunatic::process"
-
-import foreign wasm unlink: WasmI64 -> Void as unlink from "lunatic::process"
-
-import foreign wasm register: (
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI64,
-  WasmI64,
-) -> WasmI32 as register from "lunatic::process"
-
-import foreign wasm unregister: (
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI64,
-) -> WasmI32 as unregister from "lunatic::process"
-
-import foreign wasm lookup: (
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-) -> WasmI32 as lookup from "lunatic::process"
-
-import foreign wasm create_data: (
-  WasmI64,
-  WasmI64,
-) -> Void as createData from "lunatic::message"
-import foreign wasm write_data: (
-  WasmI32,
-  WasmI32,
-) -> WasmI32 as writeData from "lunatic::message"
-import foreign wasm read_data: (
-  WasmI32,
-  WasmI32,
-) -> WasmI32 as readData from "lunatic::message"
-import foreign wasm seek_data: WasmI64 -> Void as seekData from "lunatic::message"
-import foreign wasm get_tag: () -> WasmI64 as getTag from "lunatic::message"
-import foreign wasm data_size: () -> WasmI64 as dataSize from "lunatic::message"
-import foreign wasm send: WasmI64 -> Void from "lunatic::message"
-import foreign wasm receive: (
-  WasmI32,
-  WasmI32,
-  WasmI32,
-) -> WasmI32 from "lunatic::message"
-
-type Process = Int64
+export record Process {
+  nodeId: Int64,
+  pid: Int64,
+}
 export exception ReceiveTimeout
 export exception MarshalError(String)
 
@@ -243,7 +133,7 @@ let receive = (tags: Option<List<Int64>>, timeout: Int32) => {
   let result = receive(
     tagsBuf,
     count,
-    WasmI32.load(WasmI32.fromGrain(timeout), 8n)
+    WasmI64.load(WasmI32.fromGrain(timeout), 8n)
   )
 
   match (result) {
@@ -272,14 +162,9 @@ export let sleep = (ms: Int64) => {
 
 @unsafe
 export let this = () => {
-  WasmI32.toGrain(DataStructures.newInt64(this())): Process
-}
-
-@unsafe
-export let uuid = (pid: Int64) => {
-  let uuid = DataStructures.allocateString(16n)
-  id(WasmI64.load(WasmI32.fromGrain(pid), 8n), WasmI32.add(uuid, 8n))
-  WasmI32.toGrain(uuid): String
+  let nodeId = Conv.toInt64(nodeId())
+  let pid = Conv.toInt64(processId())
+  { nodeId, pid }: Process
 }
 
 export let send: (Process, a, Mailbox<a>) -> Void =
