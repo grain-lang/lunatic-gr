@@ -1,12 +1,19 @@
-import WasmI32 from "runtime/unsafe/wasmi32"
-import WasmI64 from "runtime/unsafe/wasmi64"
+module Wasi
 
-export foreign wasm config_add_environment_variable: (
+provide foreign wasm config_add_environment_variable: (
   WasmI64,
   WasmI32,
   WasmI32,
   WasmI32,
   WasmI32,
 ) -> Void as configAddEnvironmentVariable from "lunatic::wasi"
-export foreign wasm config_add_command_line_argument: (WasmI64, WasmI32, WasmI32) -> Void as configAddCommandLineArgument from "lunatic::wasi"
-export foreign wasm config_preopen_dir: (WasmI64, WasmI32, WasmI32) -> Void as configPreopenDir from "lunatic::wasi"
+provide foreign wasm config_add_command_line_argument: (
+  WasmI64,
+  WasmI32,
+  WasmI32,
+) -> Void as configAddCommandLineArgument from "lunatic::wasi"
+provide foreign wasm config_preopen_dir: (
+  WasmI64,
+  WasmI32,
+  WasmI32,
+) -> Void as configPreopenDir from "lunatic::wasi"

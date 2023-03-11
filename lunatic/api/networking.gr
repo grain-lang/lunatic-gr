@@ -1,40 +1,57 @@
-import WasmI32 from "runtime/unsafe/wasmi32"
-import WasmI64 from "runtime/unsafe/wasmi64"
+module Networking
 
-export foreign wasm resolve: (WasmI32, WasmI32, WasmI64, WasmI32) -> WasmI32 from "lunatic::networking"
-export foreign wasm drop_dns_iterator: (WasmI64) -> Void as dropDnsIterator from "lunatic::networking"
-export foreign wasm resolve_next: (
+provide foreign wasm resolve: (
+  WasmI32,
+  WasmI32,
+  WasmI64,
+  WasmI32,
+) -> WasmI32 from "lunatic::networking"
+provide foreign wasm drop_dns_iterator: WasmI64 -> Void as dropDnsIterator from "lunatic::networking"
+provide foreign wasm resolve_next: (
   WasmI64,
   WasmI32,
   WasmI32,
   WasmI32,
   WasmI32,
   WasmI32,
-) -> WasmI32 as resolveNext from "lunatic::networking";
-export foreign wasm tcp_bind: (
+) -> WasmI32 as resolveNext from "lunatic::networking"
+provide foreign wasm tcp_bind: (
   WasmI32,
   WasmI32,
   WasmI32,
   WasmI32,
   WasmI32,
   WasmI32,
-) -> WasmI32 as tcpBind from "lunatic::networking";
-export foreign wasm udp_bind: (
+) -> WasmI32 as tcpBind from "lunatic::networking"
+provide foreign wasm udp_bind: (
   WasmI32,
   WasmI32,
   WasmI32,
   WasmI32,
   WasmI32,
   WasmI32,
-) -> WasmI32 as udpBind from "lunatic::networking";
-export foreign wasm drop_tcp_listener: (WasmI64) -> Void as dropTcpListener from "lunatic::networking"
-export foreign wasm drop_tls_listener: (WasmI64) -> Void as dropTlsListener from "lunatic::networking"
-export foreign wasm drop_udp_socket: (WasmI64) -> Void as dropUdpSocket from "lunatic::networking"
-export foreign wasm tcp_local_addr: (WasmI64, WasmI32) -> WasmI32 as tcpLocalAddr from "lunatic::networking";
-export foreign wasm tls_local_addr: (WasmI64, WasmI32) -> WasmI32 as tlsLocalAddr from "lunatic::networking";
-export foreign wasm udp_local_addr: (WasmI64, WasmI32) -> WasmI32 as udpLocalAddr from "lunatic::networking";
-export foreign wasm tcp_accept: (WasmI64, WasmI32, WasmI32) -> WasmI32 as tcpAccept from "lunatic::networking";
-export foreign wasm tcp_connect: (
+) -> WasmI32 as udpBind from "lunatic::networking"
+provide foreign wasm drop_tcp_listener: WasmI64 -> Void as dropTcpListener from "lunatic::networking"
+provide foreign wasm drop_tls_listener: WasmI64 -> Void as dropTlsListener from "lunatic::networking"
+provide foreign wasm drop_udp_socket: WasmI64 -> Void as dropUdpSocket from "lunatic::networking"
+provide foreign wasm tcp_local_addr: (
+  WasmI64,
+  WasmI32,
+) -> WasmI32 as tcpLocalAddr from "lunatic::networking"
+provide foreign wasm tls_local_addr: (
+  WasmI64,
+  WasmI32,
+) -> WasmI32 as tlsLocalAddr from "lunatic::networking"
+provide foreign wasm udp_local_addr: (
+  WasmI64,
+  WasmI32,
+) -> WasmI32 as udpLocalAddr from "lunatic::networking"
+provide foreign wasm tcp_accept: (
+  WasmI64,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as tcpAccept from "lunatic::networking"
+provide foreign wasm tcp_connect: (
   WasmI32,
   WasmI32,
   WasmI32,
@@ -42,8 +59,8 @@ export foreign wasm tcp_connect: (
   WasmI32,
   WasmI64,
   WasmI32,
-) -> WasmI32 as tcpConnect from "lunatic::networking";
-export foreign wasm udp_connect: (
+) -> WasmI32 as tcpConnect from "lunatic::networking"
+provide foreign wasm udp_connect: (
   WasmI64,
   WasmI32,
   WasmI32,
@@ -52,71 +69,92 @@ export foreign wasm udp_connect: (
   WasmI32,
   WasmI64,
   WasmI32,
-) -> WasmI32 as udpConnect from "lunatic::networking";
-export foreign wasm drop_tcp_stream: (WasmI64) -> Void as dropTcpStream from "lunatic::networking"
-export foreign wasm clone_tcp_stream: (WasmI64) -> WasmI64 as cloneTcpStream from "lunatic::networking";
-export foreign wasm tcp_write_vectored: (
+) -> WasmI32 as udpConnect from "lunatic::networking"
+provide foreign wasm drop_tcp_stream: WasmI64 -> Void as dropTcpStream from "lunatic::networking"
+provide foreign wasm clone_tcp_stream: WasmI64 -> WasmI64 as cloneTcpStream from "lunatic::networking"
+provide foreign wasm tcp_write_vectored: (
   WasmI64,
   WasmI32,
   WasmI32,
   WasmI32,
-) -> WasmI32 as tcpWriteVectored from "lunatic::networking";
-export foreign wasm tcp_read: (
+) -> WasmI32 as tcpWriteVectored from "lunatic::networking"
+provide foreign wasm tcp_read: (
   WasmI64,
   WasmI32,
   WasmI32,
   WasmI32,
-) -> WasmI32 as tcpRead from "lunatic::networking";
-export foreign wasm tcp_peek: (
+) -> WasmI32 as tcpRead from "lunatic::networking"
+provide foreign wasm tcp_peek: (
   WasmI64,
   WasmI32,
   WasmI32,
   WasmI32,
-) -> WasmI32 as tcpPeek from "lunatic::networking";
-export foreign wasm udp_send: (
+) -> WasmI32 as tcpPeek from "lunatic::networking"
+provide foreign wasm udp_send: (
   WasmI64,
   WasmI32,
   WasmI32,
   WasmI32,
-) -> WasmI32 as udpSend from "lunatic::networking";
-export foreign wasm udp_send_to: (
-  WasmI64,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-) -> WasmI32 as udpSendTo from "lunatic::networking";
-export foreign wasm udp_receive: (
-  WasmI64,
-  WasmI32,
-  WasmI32,
-  WasmI32,
-) -> WasmI32 as udpReceive from "lunatic::networking";
-export foreign wasm udp_receive_from: (
+) -> WasmI32 as udpSend from "lunatic::networking"
+provide foreign wasm udp_send_to: (
   WasmI64,
   WasmI32,
   WasmI32,
   WasmI32,
   WasmI32,
-) -> WasmI32 as udpReceiveFrom from "lunatic::networking";
-export foreign wasm set_udp_socket_ttl: (WasmI64, WasmI32) -> Void as setUdpSocketTtl from "lunatic::networking"
-export foreign wasm set_udp_socket_broadcast: (WasmI64, WasmI32) -> Void as setUdpSocketBroadcast from "lunatic::networking"
-export foreign wasm get_udp_socket_ttl: (WasmI64) -> WasmI32 as getUdpSocketTtl from "lunatic::networking";
-export foreign wasm get_udp_socket_broadcast: (WasmI64) -> WasmI32 as getUdpSocketBroadcast from "lunatic::networking";
-export foreign wasm clone_udp_socket: (WasmI64) -> WasmI64 as cloneUdpSocket from "lunatic::networking";
-export foreign wasm tcp_flush: (WasmI64, WasmI32) -> WasmI32 as tcpFlush from "lunatic::networking";
-export foreign wasm tls_flush: (WasmI64, WasmI32) -> WasmI32 as tlsFlush from "lunatic::networking";
-export foreign wasm set_read_timeout: (WasmI64, WasmI64) -> Void as setReadTimeout from "lunatic::networking"
-export foreign wasm get_read_timeout: (WasmI64) -> WasmI64 as getReadTimeout from "lunatic::networking";
-export foreign wasm set_write_timeout: (WasmI64, WasmI64) -> Void as setWriteTimeout from "lunatic::networking"
-export foreign wasm get_write_timeout: (WasmI64) -> WasmI64 as getWriteTimeout from "lunatic::networking";
-export foreign wasm set_peek_timeout: (WasmI64, WasmI64) -> Void as setPeekTimeout from "lunatic::networking"
-export foreign wasm get_peek_timeout: (WasmI64) -> WasmI64 as getPeekTimeout from "lunatic::networking";
-export foreign wasm tls_bind: (
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as udpSendTo from "lunatic::networking"
+provide foreign wasm udp_receive: (
+  WasmI64,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as udpReceive from "lunatic::networking"
+provide foreign wasm udp_receive_from: (
+  WasmI64,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as udpReceiveFrom from "lunatic::networking"
+provide foreign wasm set_udp_socket_ttl: (
+  WasmI64,
+  WasmI32,
+) -> Void as setUdpSocketTtl from "lunatic::networking"
+provide foreign wasm set_udp_socket_broadcast: (
+  WasmI64,
+  WasmI32,
+) -> Void as setUdpSocketBroadcast from "lunatic::networking"
+provide foreign wasm get_udp_socket_ttl: WasmI64 -> WasmI32 as getUdpSocketTtl from "lunatic::networking"
+provide foreign wasm get_udp_socket_broadcast: WasmI64 -> WasmI32 as getUdpSocketBroadcast from "lunatic::networking"
+provide foreign wasm clone_udp_socket: WasmI64 -> WasmI64 as cloneUdpSocket from "lunatic::networking"
+provide foreign wasm tcp_flush: (
+  WasmI64,
+  WasmI32,
+) -> WasmI32 as tcpFlush from "lunatic::networking"
+provide foreign wasm tls_flush: (
+  WasmI64,
+  WasmI32,
+) -> WasmI32 as tlsFlush from "lunatic::networking"
+provide foreign wasm set_read_timeout: (
+  WasmI64,
+  WasmI64,
+) -> Void as setReadTimeout from "lunatic::networking"
+provide foreign wasm get_read_timeout: WasmI64 -> WasmI64 as getReadTimeout from "lunatic::networking"
+provide foreign wasm set_write_timeout: (
+  WasmI64,
+  WasmI64,
+) -> Void as setWriteTimeout from "lunatic::networking"
+provide foreign wasm get_write_timeout: WasmI64 -> WasmI64 as getWriteTimeout from "lunatic::networking"
+provide foreign wasm set_peek_timeout: (
+  WasmI64,
+  WasmI64,
+) -> Void as setPeekTimeout from "lunatic::networking"
+provide foreign wasm get_peek_timeout: WasmI64 -> WasmI64 as getPeekTimeout from "lunatic::networking"
+provide foreign wasm tls_bind: (
   WasmI32,
   WasmI32,
   WasmI32,
@@ -127,9 +165,13 @@ export foreign wasm tls_bind: (
   WasmI32,
   WasmI32,
   WasmI32,
-) -> WasmI32 as tlsBind from "lunatic::networking";
-export foreign wasm tls_accept: (WasmI64, WasmI32, WasmI32) -> WasmI32 as tlsAccept from "lunatic::networking";
-export foreign wasm tls_connect: (
+) -> WasmI32 as tlsBind from "lunatic::networking"
+provide foreign wasm tls_accept: (
+  WasmI64,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as tlsAccept from "lunatic::networking"
+provide foreign wasm tls_connect: (
   WasmI32,
   WasmI32,
   WasmI32,
@@ -137,22 +179,28 @@ export foreign wasm tls_connect: (
   WasmI32,
   WasmI32,
   WasmI32,
-) -> WasmI32 as tlsConnect from "lunatic::networking";
-export foreign wasm drop_tls_stream: (WasmI64) -> Void as dropTlsStream from "lunatic::networking"
-export foreign wasm clone_tls_stream: (WasmI64) -> WasmI64 as cloneTlsStream from "lunatic::networking";
-export foreign wasm tls_write_vectored: (
+) -> WasmI32 as tlsConnect from "lunatic::networking"
+provide foreign wasm drop_tls_stream: WasmI64 -> Void as dropTlsStream from "lunatic::networking"
+provide foreign wasm clone_tls_stream: WasmI64 -> WasmI64 as cloneTlsStream from "lunatic::networking"
+provide foreign wasm tls_write_vectored: (
   WasmI64,
   WasmI32,
   WasmI32,
   WasmI32,
-) -> WasmI32 as tlsWriteVectored from "lunatic::networking";
-export foreign wasm tls_read: (
+) -> WasmI32 as tlsWriteVectored from "lunatic::networking"
+provide foreign wasm tls_read: (
   WasmI64,
   WasmI32,
   WasmI32,
   WasmI32,
-) -> WasmI32 as tlsRead from "lunatic::networking";
-export foreign wasm set_tls_read_timeout: (WasmI64, WasmI64) -> Void as setTlsReadTimeout from "lunatic::networking"
-export foreign wasm get_tls_read_timeout: (WasmI64) -> WasmI64 as getTlsReadTimeout from "lunatic::networking";
-export foreign wasm set_tls_write_timeout: (WasmI64, WasmI64) -> Void as setTlsWriteTimeout from "lunatic::networking"
-export foreign wasm get_tls_write_timeout: (WasmI64) -> WasmI64 as getTlsWriteTimeout from "lunatic::networking";
+) -> WasmI32 as tlsRead from "lunatic::networking"
+provide foreign wasm set_tls_read_timeout: (
+  WasmI64,
+  WasmI64,
+) -> Void as setTlsReadTimeout from "lunatic::networking"
+provide foreign wasm get_tls_read_timeout: WasmI64 -> WasmI64 as getTlsReadTimeout from "lunatic::networking"
+provide foreign wasm set_tls_write_timeout: (
+  WasmI64,
+  WasmI64,
+) -> Void as setTlsWriteTimeout from "lunatic::networking"
+provide foreign wasm get_tls_write_timeout: WasmI64 -> WasmI64 as getTlsWriteTimeout from "lunatic::networking"

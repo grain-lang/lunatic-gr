@@ -1,5 +1,5 @@
-import WasmI32 from "runtime/unsafe/wasmi32"
+module Version
 
-export foreign wasm major: () -> WasmI32 from "lunatic::version"
-export foreign wasm minor: () -> WasmI32 from "lunatic::version"
-export foreign wasm patch: () -> WasmI32 from "lunatic::version"
+provide foreign wasm major: () -> WasmI32 from "lunatic::version"
+provide foreign wasm minor: () -> WasmI32 from "lunatic::version"
+provide foreign wasm patch: () -> WasmI32 from "lunatic::version"

@@ -1,21 +1,39 @@
-import WasmI32 from "runtime/unsafe/wasmi32"
-import WasmI64 from "runtime/unsafe/wasmi64"
+module Process
 
-export foreign wasm compile_module: (WasmI32, WasmI32, WasmI32) -> WasmI32 as compileModule from "lunatic::process"
-export foreign wasm drop_module: (WasmI64) -> Void as dropModule from "lunatic::process"
-export foreign wasm create_config: () -> WasmI64 as createConfig from "lunatic::process"
-export foreign wasm drop_config: (WasmI64) -> Void as dropConfig from "lunatic::process"
-export foreign wasm config_set_max_memory: (WasmI64, WasmI64) -> Void as configSetMaxMemory from "lunatic::process"
-export foreign wasm config_get_max_memory: (WasmI64) -> WasmI64 as configGetMaxMemory from "lunatic::process"
-export foreign wasm config_set_max_fuel: (WasmI64, WasmI64) -> Void as configSetMaxFuel from "lunatic::process"
-export foreign wasm config_get_max_fuel: (WasmI64) -> WasmI64 as configGetMaxFuel from "lunatic::process"
-export foreign wasm config_can_compile_modules: (WasmI64) -> WasmI32 as configCanCompileModules from "lunatic::process"
-export foreign wasm config_set_can_compile_modules: (WasmI64, WasmI32) -> Void as configSetCanCompileModules from "lunatic::process"
-export foreign wasm config_can_create_configs: (WasmI64) -> WasmI32 as configCanCreateConfigs from "lunatic::process"
-export foreign wasm config_set_can_create_configs: (WasmI64, WasmI32) -> Void as configSetCanCreateConfigs from "lunatic::process"
-export foreign wasm config_can_spawn_processes: (WasmI64) -> WasmI32 as configCanSpawnProcesses from "lunatic::process"
-export foreign wasm config_set_can_spawn_processes: (WasmI64, WasmI32) -> Void as configSetCanSpawnProcesses from "lunatic::process"
-export foreign wasm spawn: (
+provide foreign wasm compile_module: (
+  WasmI32,
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as compileModule from "lunatic::process"
+provide foreign wasm drop_module: WasmI64 -> Void as dropModule from "lunatic::process"
+provide foreign wasm create_config: () -> WasmI64 as createConfig from "lunatic::process"
+provide foreign wasm drop_config: WasmI64 -> Void as dropConfig from "lunatic::process"
+provide foreign wasm config_set_max_memory: (
+  WasmI64,
+  WasmI64,
+) -> Void as configSetMaxMemory from "lunatic::process"
+provide foreign wasm config_get_max_memory: WasmI64 -> WasmI64 as configGetMaxMemory from "lunatic::process"
+provide foreign wasm config_set_max_fuel: (
+  WasmI64,
+  WasmI64,
+) -> Void as configSetMaxFuel from "lunatic::process"
+provide foreign wasm config_get_max_fuel: WasmI64 -> WasmI64 as configGetMaxFuel from "lunatic::process"
+provide foreign wasm config_can_compile_modules: WasmI64 -> WasmI32 as configCanCompileModules from "lunatic::process"
+provide foreign wasm config_set_can_compile_modules: (
+  WasmI64,
+  WasmI32,
+) -> Void as configSetCanCompileModules from "lunatic::process"
+provide foreign wasm config_can_create_configs: WasmI64 -> WasmI32 as configCanCreateConfigs from "lunatic::process"
+provide foreign wasm config_set_can_create_configs: (
+  WasmI64,
+  WasmI32,
+) -> Void as configSetCanCreateConfigs from "lunatic::process"
+provide foreign wasm config_can_spawn_processes: WasmI64 -> WasmI32 as configCanSpawnProcesses from "lunatic::process"
+provide foreign wasm config_set_can_spawn_processes: (
+  WasmI64,
+  WasmI32,
+) -> Void as configSetCanSpawnProcesses from "lunatic::process"
+provide foreign wasm spawn: (
   WasmI64,
   WasmI64,
   WasmI64,
@@ -25,9 +43,12 @@ export foreign wasm spawn: (
   WasmI32,
   WasmI32,
 ) -> WasmI32 as spawn from "lunatic::process"
-export foreign wasm sleep_ms: (WasmI64) -> Void as sleepMs from "lunatic::process"
-export foreign wasm die_when_link_dies: (WasmI32) -> Void as dieWhenLinkDies from "lunatic::process"
-export foreign wasm process_id: () -> WasmI64 as processId from "lunatic::process"
-export foreign wasm link: (WasmI64, WasmI64) -> Void as link from "lunatic::process"
-export foreign wasm unlink: (WasmI64) -> Void as unlink from "lunatic::process"
-export foreign wasm kill: (WasmI64) -> Void as kill from "lunatic::process"
+provide foreign wasm sleep_ms: WasmI64 -> Void as sleepMs from "lunatic::process"
+provide foreign wasm die_when_link_dies: WasmI32 -> Void as dieWhenLinkDies from "lunatic::process"
+provide foreign wasm process_id: () -> WasmI64 as processId from "lunatic::process"
+provide foreign wasm link: (
+  WasmI64,
+  WasmI64,
+) -> Void as link from "lunatic::process"
+provide foreign wasm unlink: WasmI64 -> Void as unlink from "lunatic::process"
+provide foreign wasm kill: WasmI64 -> Void as kill from "lunatic::process"

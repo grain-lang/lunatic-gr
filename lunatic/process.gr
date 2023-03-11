@@ -1,18 +1,22 @@
-import WasmI32 from "runtime/unsafe/wasmi32"
-import WasmI64 from "runtime/unsafe/wasmi64"
-import Conv from "runtime/unsafe/conv"
-import Memory from "runtime/unsafe/memory"
-import DataStructures from "runtime/dataStructures"
-import Tags from "runtime/unsafe/tags"
+module Process
 
-import Array from "array"
-import Bytes from "bytes"
-import Int64 from "int64"
-import Marshal from "marshal"
-import Result from "result"
+include "runtime/unsafe/wasmi32"
+include "runtime/unsafe/wasmi64"
+include "runtime/unsafe/conv"
+include "runtime/unsafe/memory"
+include "runtime/dataStructures"
+include "runtime/unsafe/tags"
 
-import { nodeId } from "./api/distributed"
-import {
+include "array"
+include "bytes"
+include "int64"
+include "marshal"
+include "result"
+
+include "./api/distributed"
+from Distributed use { nodeId }
+include "./api/process"
+from Process use {
   compileModule,
   dropModule,
   createConfig,
@@ -34,17 +38,27 @@ import {
   link,
   unlink,
   kill,
-} from "./api/process"
-import { createData, writeData, readData, seekData, getTag, dataSize, send, receive } from "./api/message"
+}
+include "./api/message"
+from Message use {
+  createData,
+  writeData,
+  readData,
+  seekData,
+  getTag,
+  dataSize,
+  send,
+  receive,
+}
 
-export record Process {
+provide record Process {
   nodeId: Int64,
   pid: Int64,
 }
-export exception ReceiveTimeout
-export exception MarshalError(String)
+provide exception ReceiveTimeout
+provide exception MarshalError(String)
 
-type Mailbox<a> = Int64
+abstract type Mailbox<a> = Int64
 
 /* Tags 0 - 127 are reserved for special purposes. */
 
@@ -54,7 +68,7 @@ let mut currentTag = 128N
 let bootstrapMailbox: Mailbox<() -> Void> = 1L
 
 @unsafe
-export let createMailbox = () => {
+provide let createMailbox = () => {
   let tag = currentTag
   currentTag = WasmI64.add(currentTag, 1N)
   WasmI32.toGrain(DataStructures.newInt64(tag)): Mailbox<a>
@@ -155,19 +169,19 @@ let idPtr = Memory.malloc(8n)
  * @param ms: The number of milliseconds to sleep
  */
 @unsafe
-export let sleep = (ms: Int64) => {
+provide let sleep = (ms: Int64) => {
   let ms = WasmI64.load(WasmI32.fromGrain(ms), 8n)
   sleepMs(ms)
 }
 
 @unsafe
-export let this = () => {
+provide let this = () => {
   let nodeId = Conv.toInt64(nodeId())
   let pid = Conv.toInt64(processId())
   { nodeId, pid }: Process
 }
 
-export let send: (Process, a, Mailbox<a>) -> Void =
+provide let send: (Process, a, Mailbox<a>) -> Void =
   (
     process,
     data,
@@ -179,7 +193,7 @@ export let send: (Process, a, Mailbox<a>) -> Void =
   send(process)
 }
 
-export let receiveTimeout: (Int32, Mailbox<a>) -> Result<a, Exception> =
+provide let receiveTimeout: (Int32, Mailbox<a>) -> Result<a, Exception> =
   (
     timeout,
     mailbox,
@@ -192,12 +206,12 @@ export let receiveTimeout: (Int32, Mailbox<a>) -> Result<a, Exception> =
   }, receive(Some([mailbox]), timeout))
 }
 
-export let receive = mailbox => {
+provide let receive = mailbox => {
   receiveTimeout(0l, mailbox)
 }
 
 @unsafe
-export let spawn = (func: () -> Void) => {
+provide let spawn = (func: () -> Void) => {
   let funcName = WasmI32.fromGrain("__lunatic_bootstrap")
 
   let result = spawn(
@@ -226,7 +240,7 @@ export let spawn = (func: () -> Void) => {
 }
 
 @unsafe
-export let __lunatic_bootstrap = () => {
+provide let __lunatic_bootstrap = () => {
   // The mailbox type is not propagated within this module for some reason so
   // we use an explicit type annotation.
   // https://github.com/grain-lang/grain/issues/1356
