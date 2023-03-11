@@ -80,6 +80,8 @@ let createData = (tag: Int64, capacity: Int64) => {
     WasmI64.load(WasmI32.fromGrain(tag), 8n),
     WasmI64.load(WasmI32.fromGrain(capacity), 8n)
   )
+  ignore(tag)
+  ignore(capacity)
 }
 
 @unsafe
@@ -119,7 +121,12 @@ let dataSize = () => {
 
 @unsafe
 let send = (pid: Process) => {
-  send(WasmI64.load(WasmI32.fromGrain(pid), 8n))
+  let err = send(WasmI64.load(WasmI32.fromGrain(pid), 8n))
+  if (WasmI32.eqz(err)) {
+    Ok(void)
+  } else {
+    Err(void)
+  }
 }
 
 @unsafe
@@ -147,7 +154,7 @@ let receive = (tags: Option<List<Int64>>, timeout: Int32) => {
   let result = receive(
     tagsBuf,
     count,
-    WasmI64.load(WasmI32.fromGrain(timeout), 8n)
+    WasmI64.extendI32U(WasmI32.load(WasmI32.fromGrain(timeout), 4n))
   )
 
   match (result) {
@@ -181,7 +188,8 @@ provide let this = () => {
   { nodeId, pid }: Process
 }
 
-provide let send: (Process, a, Mailbox<a>) -> Void =
+@unsafe
+provide let send: (Process, a, Mailbox<a>) -> Result<Void, Void> =
   (
     process,
     data,
@@ -231,9 +239,10 @@ provide let spawn = (func: () -> Void) => {
 
   if (WasmI32.eqz(result)) {
     let process = spawnId: Process
-    send(process, func, bootstrapMailbox)
-
-    Ok(process)
+    match (send(process, func, bootstrapMailbox)) {
+      Ok(_) => Ok(process),
+      Err(_) => Err(spawnId: Int64),
+    }
   } else {
     Err(spawnId: Int64)
   }
