@@ -1,0 +1,10 @@
+import Process from "lunatic/process"
+
+print("Counting...")
+
+for (let mut i = 0; i < 10; i += 1) {
+  Process.sleep(200L)
+  print(i)
+}
+
+print("Done.")

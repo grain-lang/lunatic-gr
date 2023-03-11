@@ -1,0 +1,6 @@
+import WasmI32 from "runtime/unsafe/wasmi32"
+import WasmI64 from "runtime/unsafe/wasmi64"
+
+export foreign wasm string_size: (WasmI64) -> WasmI32 as stringSize from "lunatic::error"
+export foreign wasm to_string: (WasmI64, WasmI32) -> Void as toString from "lunatic::error"
+export foreign wasm drop: (WasmI64) -> Void as drop from "lunatic::error"
