@@ -1,3 +1,5 @@
 module Hello
 
-print("Hello from Lunatic!")
+provide let _start = () => {
+  print("Hello from Lunatic!")
+}

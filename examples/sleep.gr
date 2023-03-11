@@ -2,11 +2,13 @@ module Sleep
 
 include "lunatic/process"
 
-print("Counting...")
+provide let _start = () => {
+  print("Counting...")
 
-for (let mut i = 0; i < 10; i += 1) {
-  Process.sleep(200L)
-  print(i)
+  for (let mut i = 0; i < 10; i += 1) {
+    Process.sleep(200L)
+    print(i)
+  }
+
+  print("Done.")
 }
-
-print("Done.")

@@ -11,7 +11,9 @@ let semverString = (major, minor, patch) => {
   "v" ++ major ++ "." ++ minor ++ "." ++ patch
 }
 
-print(
-  "Hello from Lunatic " ++
-  semverString(Version.major(), Version.minor(), Version.patch())
-)
+provide let _start = () => {
+  print(
+    "Hello from Lunatic " ++
+    semverString(Version.major(), Version.minor(), Version.patch())
+  )
+}
