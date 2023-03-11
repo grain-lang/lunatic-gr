@@ -1,13 +1,22 @@
-import WasmI32 from "runtime/unsafe/wasmi32"
-import WasmI64 from "runtime/unsafe/wasmi64"
+module Distributed
 
-export foreign wasm get_nodes: (WasmI32, WasmI32) -> WasmI32 as getNodes from "lunatic::distributed"
-export foreign wasm nodes_count: () -> WasmI32 as nodesCount from "lunatic::distributed"
-export foreign wasm node_id: () -> WasmI64 as nodeId from "lunatic::distributed"
-export foreign wasm module_id: () -> WasmI64 as moduleId from "lunatic::distributed"
-export foreign wasm send: (WasmI64, WasmI64) -> Void as send from "lunatic::distributed"
-export foreign wasm send_receive_skip_search: (WasmI64, WasmI64, WasmI64) -> WasmI32 as sendReceiveSkipSearch from "lunatic::distributed"
-export foreign wasm spawn: (
+provide foreign wasm get_nodes: (
+  WasmI32,
+  WasmI32,
+) -> WasmI32 as getNodes from "lunatic::distributed"
+provide foreign wasm nodes_count: () -> WasmI32 as nodesCount from "lunatic::distributed"
+provide foreign wasm node_id: () -> WasmI64 as nodeId from "lunatic::distributed"
+provide foreign wasm module_id: () -> WasmI64 as moduleId from "lunatic::distributed"
+provide foreign wasm send: (
+  WasmI64,
+  WasmI64,
+) -> Void as send from "lunatic::distributed"
+provide foreign wasm send_receive_skip_search: (
+  WasmI64,
+  WasmI64,
+  WasmI64,
+) -> WasmI32 as sendReceiveSkipSearch from "lunatic::distributed"
+provide foreign wasm spawn: (
   WasmI64,
   WasmI64,
   WasmI64,

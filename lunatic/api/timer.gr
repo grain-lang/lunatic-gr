@@ -1,5 +1,7 @@
-import WasmI32 from "runtime/unsafe/wasmi32"
-import WasmI64 from "runtime/unsafe/wasmi64"
+module Timer
 
-export foreign wasm send_after: (WasmI64, WasmI64) -> WasmI64 as sendAfter from "lunatic::timer"
-export foreign wasm cancel_timer: (WasmI64) -> WasmI32 as cancelTimer from "lunatic::timer"
+provide foreign wasm send_after: (
+  WasmI64,
+  WasmI64,
+) -> WasmI64 as sendAfter from "lunatic::timer"
+provide foreign wasm cancel_timer: WasmI64 -> WasmI32 as cancelTimer from "lunatic::timer"

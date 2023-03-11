@@ -1,4 +1,6 @@
-import Process from "lunatic/process"
+module Sleep
+
+include "lunatic/process"
 
 print("Counting...")
 

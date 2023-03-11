@@ -1,18 +1,33 @@
-import WasmI32 from "runtime/unsafe/wasmi32"
-import WasmI64 from "runtime/unsafe/wasmi64"
+module Message
 
-export foreign wasm create_data: (WasmI64, WasmI64) -> Void as createData from "lunatic::message"
-export foreign wasm write_data: (WasmI32, WasmI32) -> usize as writeData from "lunatic::message"
-export foreign wasm read_data: (WasmI32, WasmI32) -> usize as readData from "lunatic::message"
-export foreign wasm seek_data: (WasmI64) -> Void as seekData from "lunatic::message"
-export foreign wasm get_tag: () -> WasmI64 as getTag from "lunatic::message"
-export foreign wasm data_size: () -> WasmI64 as dataSize from "lunatic::message"
-export foreign wasm push_module: (WasmI64) -> WasmI64 as pushModule from "lunatic::message"
-export foreign wasm take_module: (WasmI64) -> WasmI64 as takeModule from "lunatic::message"
-export foreign wasm push_tcp_stream: (WasmI64) -> WasmI64 as pushTcpStream from "lunatic::message"
-export foreign wasm take_tcp_stream: (WasmI64) -> WasmI64 as takeTcpStream from "lunatic::message"
-export foreign wasm push_tls_stream: (WasmI64) -> WasmI64 as pushTlsStream from "lunatic::message"
-export foreign wasm take_tls_stream: (WasmI64) -> WasmI64 as takeTlsStream from "lunatic::message"
-export foreign wasm send: (WasmI64) -> Void as send from "lunatic::message"
-export foreign wasm send_receive_skip_search: (WasmI64, WasmI64) -> WasmI32 as sendReceiveSkipSearch from "lunatic::message"
-export foreign wasm receive: (WasmI32, WasmI32, WasmI64) -> WasmI32 as receive from "lunatic::message"
+provide foreign wasm create_data: (
+  WasmI64,
+  WasmI64,
+) -> Void as createData from "lunatic::message"
+provide foreign wasm write_data: (
+  WasmI32,
+  WasmI32,
+) -> usize as writeData from "lunatic::message"
+provide foreign wasm read_data: (
+  WasmI32,
+  WasmI32,
+) -> usize as readData from "lunatic::message"
+provide foreign wasm seek_data: WasmI64 -> Void as seekData from "lunatic::message"
+provide foreign wasm get_tag: () -> WasmI64 as getTag from "lunatic::message"
+provide foreign wasm data_size: () -> WasmI64 as dataSize from "lunatic::message"
+provide foreign wasm push_module: WasmI64 -> WasmI64 as pushModule from "lunatic::message"
+provide foreign wasm take_module: WasmI64 -> WasmI64 as takeModule from "lunatic::message"
+provide foreign wasm push_tcp_stream: WasmI64 -> WasmI64 as pushTcpStream from "lunatic::message"
+provide foreign wasm take_tcp_stream: WasmI64 -> WasmI64 as takeTcpStream from "lunatic::message"
+provide foreign wasm push_tls_stream: WasmI64 -> WasmI64 as pushTlsStream from "lunatic::message"
+provide foreign wasm take_tls_stream: WasmI64 -> WasmI64 as takeTlsStream from "lunatic::message"
+provide foreign wasm send: WasmI64 -> Void as send from "lunatic::message"
+provide foreign wasm send_receive_skip_search: (
+  WasmI64,
+  WasmI64,
+) -> WasmI32 as sendReceiveSkipSearch from "lunatic::message"
+provide foreign wasm receive: (
+  WasmI32,
+  WasmI32,
+  WasmI64,
+) -> WasmI32 as receive from "lunatic::message"

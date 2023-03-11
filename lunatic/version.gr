@@ -1,19 +1,23 @@
-import WasmI32 from "runtime/unsafe/wasmi32"
-import { newInt32 } from "runtime/dataStructures"
+module Version
 
-import { major, minor, patch } from "./api/version"
+include "runtime/unsafe/wasmi32"
+include "runtime/dataStructures"
+from DataStructures use { newInt32 }
+
+include "./api/version"
+from Version use { major, minor, patch }
 
 @unsafe
-export let major = () => {
+provide let major = () => {
   WasmI32.toGrain(newInt32(major())): Int32
 }
 
 @unsafe
-export let minor = () => {
+provide let minor = () => {
   WasmI32.toGrain(newInt32(minor())): Int32
 }
 
 @unsafe
-export let patch = () => {
+provide let patch = () => {
   WasmI32.toGrain(newInt32(patch())): Int32
 }

@@ -1,7 +1,9 @@
-import Bytes from "bytes"
-import Int64 from "int64"
-import Result from "result"
-import Process from "lunatic/process"
+module Spawn
+
+include "bytes"
+include "int64"
+include "result"
+include "lunatic/process"
 
 record SomeData<a> {
   key: String,
@@ -10,7 +12,7 @@ record SomeData<a> {
 
 let mailbox = Process.createMailbox()
 
-export let _start = () => {
+provide let _start = () => {
   let localdata = { key: "localdata", value: 54321 }
 
   let child = Result.unwrap(
@@ -30,4 +32,4 @@ export let _start = () => {
   Process.sleep(100L)
 }
 
-export let __lunatic_bootstrap = Process.__lunatic_bootstrap
+provide let __lunatic_bootstrap = Process.__lunatic_bootstrap
