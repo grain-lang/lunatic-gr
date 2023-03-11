@@ -7,11 +7,11 @@ provide foreign wasm create_data: (
 provide foreign wasm write_data: (
   WasmI32,
   WasmI32,
-) -> usize as writeData from "lunatic::message"
+) -> WasmI32 as writeData from "lunatic::message"
 provide foreign wasm read_data: (
   WasmI32,
   WasmI32,
-) -> usize as readData from "lunatic::message"
+) -> WasmI32 as readData from "lunatic::message"
 provide foreign wasm seek_data: WasmI64 -> Void as seekData from "lunatic::message"
 provide foreign wasm get_tag: () -> WasmI64 as getTag from "lunatic::message"
 provide foreign wasm data_size: () -> WasmI64 as dataSize from "lunatic::message"
@@ -21,7 +21,7 @@ provide foreign wasm push_tcp_stream: WasmI64 -> WasmI64 as pushTcpStream from "
 provide foreign wasm take_tcp_stream: WasmI64 -> WasmI64 as takeTcpStream from "lunatic::message"
 provide foreign wasm push_tls_stream: WasmI64 -> WasmI64 as pushTlsStream from "lunatic::message"
 provide foreign wasm take_tls_stream: WasmI64 -> WasmI64 as takeTlsStream from "lunatic::message"
-provide foreign wasm send: WasmI64 -> Void as send from "lunatic::message"
+provide foreign wasm send: WasmI64 -> WasmI32 as send from "lunatic::message"
 provide foreign wasm send_receive_skip_search: (
   WasmI64,
   WasmI64,

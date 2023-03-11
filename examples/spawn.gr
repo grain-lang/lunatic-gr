@@ -15,6 +15,9 @@ let mailbox = Process.createMailbox()
 provide let _start = () => {
   let localdata = { key: "localdata", value: 54321 }
 
+  print("[main proccess] Hello from the main process!")
+  print("[main proccess] Spawning a child...")
+
   let child = Result.unwrap(
     Process.spawn(() => {
       print("[subprocess] 👋 from spawned process!")
@@ -25,7 +28,6 @@ provide let _start = () => {
     })
   )
 
-  print("[main proccess] Hello from the main process!")
   print("[main proccess] sending some data...")
 
   Process.send(child, { key: "datakey", value: 42 }, mailbox)
