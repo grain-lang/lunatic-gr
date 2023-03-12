@@ -302,6 +302,15 @@ provide let deregister = (name: String) => {
 }
 
 @unsafe
+provide let dieWhenLinkDies = shouldDie => {
+  if (shouldDie) {
+    dieWhenLinkDies(1n)
+  } else {
+    dieWhenLinkDies(0n)
+  }
+}
+
+@unsafe
 provide let __lunatic_bootstrap = () => {
   // The mailbox type is not propagated within this module for some reason so
   // we use an explicit type annotation.
