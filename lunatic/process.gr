@@ -51,6 +51,8 @@ from Message use {
   receive,
 }
 
+include "./api/registry"
+
 provide record Process {
   nodeId: Int64,
   pid: Int64,
@@ -246,6 +248,56 @@ provide let spawn = (func: () -> Void) => {
   } else {
     Err(spawnId: Int64)
   }
+}
+
+@unsafe
+provide let register = (name: String, process: Process) => {
+  let namePtr = WasmI32.fromGrain(name)
+  let nameLen = WasmI32.load(namePtr, 4n)
+  let namePtr = WasmI32.add(namePtr, 8n)
+
+  let nodeIdValue = WasmI64.load(WasmI32.fromGrain(process.nodeId), 8n)
+  let processId = WasmI64.load(WasmI32.fromGrain(process.pid), 8n)
+
+  Registry.put(namePtr, nameLen, nodeIdValue, processId)
+
+  ignore(name)
+  ignore(process)
+}
+
+@unsafe
+provide let lookup = (name: String) => {
+  let namePtr = WasmI32.fromGrain(name)
+  let nameLen = WasmI32.load(namePtr, 4n)
+  let namePtr = WasmI32.add(namePtr, 8n)
+
+  let nodeId = DataStructures.allocateInt64()
+  let pid = DataStructures.allocateInt64()
+
+  let err = Registry.get(
+    namePtr,
+    nameLen,
+    WasmI32.add(nodeId, 8n),
+    WasmI32.add(pid, 8n)
+  )
+  if (WasmI32.eqz(err)) {
+    Some({ nodeId: WasmI32.toGrain(nodeId), pid: WasmI32.toGrain(pid) })
+  } else {
+    Memory.free(nodeId)
+    Memory.free(pid)
+    None
+  }
+}
+
+@unsafe
+provide let deregister = (name: String) => {
+  let namePtr = WasmI32.fromGrain(name)
+  let nameLen = WasmI32.load(namePtr, 4n)
+  let namePtr = WasmI32.add(namePtr, 8n)
+
+  Registry.remove(namePtr, nameLen)
+
+  ignore(name)
 }
 
 @unsafe
