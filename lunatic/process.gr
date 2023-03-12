@@ -57,6 +57,7 @@ provide record Process {
   nodeId: Int64,
   pid: Int64,
 }
+provide exception LunaticError
 provide exception ReceiveTimeout
 provide exception MarshalError(String)
 
@@ -127,7 +128,7 @@ let send = (pid: Process) => {
   if (WasmI32.eqz(err)) {
     Ok(void)
   } else {
-    Err(void)
+    Err(LunaticError)
   }
 }
 
@@ -191,7 +192,7 @@ provide let this = () => {
 }
 
 @unsafe
-provide let send: (Process, a, Mailbox<a>) -> Result<Void, Void> =
+provide let send: (Process, a, Mailbox<a>) -> Result<Void, Exception> =
   (
     process,
     data,
