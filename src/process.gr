@@ -123,8 +123,9 @@ let dataSize = () => {
 }
 
 @unsafe
-let send = (pid: Process) => {
-  let err = send(WasmI64.load(WasmI32.fromGrain(pid), 8n))
+let send = (process: Process) => {
+  let err = send(WasmI64.load(WasmI32.fromGrain(process.pid), 8n))
+  ignore(process)
   if (WasmI32.eqz(err)) {
     Ok(void)
   } else {
@@ -133,7 +134,7 @@ let send = (pid: Process) => {
 }
 
 @unsafe
-let receive = (tags: Option<List<Int64>>, timeout: Int32) => {
+let receive = (tags: Option<List<Int64>>, timeout: Uint64) => {
   let tags = match (tags) {
     Some(tags) => Array.fromList(tags),
     None => [>],
@@ -157,7 +158,7 @@ let receive = (tags: Option<List<Int64>>, timeout: Int32) => {
   let result = receive(
     tagsBuf,
     count,
-    WasmI64.extendI32U(WasmI32.load(WasmI32.fromGrain(timeout), 4n))
+    WasmI64.load(WasmI32.fromGrain(timeout), 8n)
   )
 
   match (result) {
@@ -204,9 +205,9 @@ provide let send: (Process, a, Mailbox<a>) -> Result<Void, Exception> =
   send(process)
 }
 
-provide let receiveTimeout: (Int32, Mailbox<a>) -> Result<a, Exception> =
+provide let receive: (?timeout: Uint64, Mailbox<a>) -> Result<a, Exception> =
   (
-    timeout,
+    timeout=0xffffffffffffffffuL,
     mailbox,
   ) => {
   Result.flatMap((_) => {
@@ -215,10 +216,6 @@ provide let receiveTimeout: (Int32, Mailbox<a>) -> Result<a, Exception> =
     readData(buf)
     Result.mapErr(msg => MarshalError(msg), Marshal.unmarshal(buf))
   }, receive(Some([mailbox]), timeout))
-}
-
-provide let receive = mailbox => {
-  receiveTimeout(0l, mailbox)
 }
 
 @unsafe
@@ -241,7 +238,7 @@ provide let spawn = (func: () -> Void) => {
   )
 
   if (WasmI32.eqz(result)) {
-    let process = spawnId: Process
+    let process = { pid: spawnId, nodeId: Conv.toInt64(nodeId()) }
     match (send(process, func, bootstrapMailbox)) {
       Ok(_) => Ok(process),
       Err(_) => Err(spawnId: Int64),
