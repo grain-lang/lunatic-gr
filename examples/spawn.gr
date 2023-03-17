@@ -3,7 +3,9 @@ module Spawn
 include "bytes"
 include "int64"
 include "result"
-include "lunatic/process"
+
+include "lunatic"
+from Lunatic use { Process }
 
 record SomeData<a> {
   key: String,

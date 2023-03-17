@@ -1,0 +1,7 @@
+module Lunatic
+
+include "./src/net"
+include "./src/process"
+include "./src/version"
+
+provide { Net, Process, Version }
