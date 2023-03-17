@@ -1,6 +1,7 @@
 module Version
 
-include "lunatic/version"
+include "lunatic"
+from Lunatic use { Version }
 
 let semverString = (major, minor, patch) => {
   let (major, minor, patch) = (
