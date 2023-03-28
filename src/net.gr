@@ -10,22 +10,25 @@ include "runtime/numberUtils"
 include "bigint"
 include "string"
 
+include "./api/message"
 include "./api/networking"
+
+provide enum IPType {
+  IPv4(Uint32),
+  IPv6(BigInt),
+}
+
+provide record IPAddress {
+  address: IPType,
+  port: Uint16,
+  flowInfo: Uint32,
+  scopeId: Uint32,
+}
+
+primitive magic = "@magic"
 
 provide module DNS {
   from Networking use { resolve, resolveNext, dropDnsIterator }
-
-  provide enum IpType {
-    IPv4(Int32),
-    IPv6(BigInt),
-  }
-
-  provide record IpAddress {
-    address: IpType,
-    port: Int32,
-    flowInfo: Int32,
-    scopeId: Int32,
-  }
 
   @unsafe
   let ipPointer = Memory.malloc(30n)
@@ -108,17 +111,17 @@ provide module DNS {
         _ => fail "unknown IP type",
       }
 
-      let port = WasmI32.toGrain(
-        DataStructures.newInt32(WasmI32.load16U(ipPointer, _PORT_OFFSET))
-      ): Int32
+      let port = DataStructures.tagUint16(
+        WasmI32.load16U(ipPointer, _PORT_OFFSET)
+      )
 
       let flowInfo = WasmI32.toGrain(
-        DataStructures.newInt32(WasmI32.load16U(ipPointer, _FLOW_INFO_OFFSET))
-      ): Int32
+        DataStructures.newUint32(WasmI32.load(ipPointer, _FLOW_INFO_OFFSET))
+      ): Uint32
 
       let scopeId = WasmI32.toGrain(
-        DataStructures.newInt32(WasmI32.load16U(ipPointer, _SCOPE_ID_OFFSET))
-      ): Int32
+        DataStructures.newUint32(WasmI32.load(ipPointer, _SCOPE_ID_OFFSET))
+      ): Uint32
 
       let address = { address, port, flowInfo, scopeId }
 
@@ -155,5 +158,164 @@ provide module DNS {
 
   provide let resolve = (host: String) => {
     resolveTimeout(host, -1L)
+  }
+}
+
+provide module Tcp {
+  abstract type TcpListener = Int64
+  abstract type TcpStream = Int64
+
+  provide enum TcpError {
+    FailedToResolveBindAddress,
+    FailedToBind,
+    FailedToAcceptConnection,
+    TcpTimeout,
+    TcpSocketClosed,
+    TcpFlushFailed,
+  }
+
+  @unsafe
+  let _ID_PTR = Memory.malloc(8n)
+  @unsafe
+  let _DNS_ITERATOR_PTR = Memory.malloc(8n)
+
+  @unsafe
+  provide let bind = address => {
+    from WasmI32 use { add as (+) }
+
+    let addresses = DNS.resolve(address)
+    let ip = match (addresses) {
+      Ok([ip, ..._]) => ip,
+      _ => return Err(FailedToResolveBindAddress),
+    }
+
+    let mut ipType = 0n
+    let mut ipPtr = 0n
+    match (ip.address) {
+      IPv4(addr) => {
+        ipType = 4n
+        ipPtr = WasmI32.load(WasmI32.fromGrain(addr), 4n)
+      },
+      IPv6(addr) => {
+        ipType = 6n
+        ipPtr = WasmI32.fromGrain(addr) + 16n
+      },
+    }
+
+    let port = DataStructures.untagUint16(ip.port)
+    let flowInfo = WasmI32.load(WasmI32.fromGrain(ip.flowInfo), 4n)
+    let scopeId = WasmI32.load(WasmI32.fromGrain(ip.scopeId), 4n)
+
+    let err = Networking.tcpBind(
+      ipType,
+      ipPtr,
+      port,
+      flowInfo,
+      scopeId,
+      _ID_PTR
+    )
+    ignore(ip)
+
+    return if (WasmI32.eqz(err)) {
+      Ok(
+        WasmI32.toGrain(
+          DataStructures.newUint64(WasmI64.load(_ID_PTR, 0n))
+        ): TcpListener
+      )
+    } else {
+      Err(FailedToBind)
+    }
+  }
+
+  @unsafe
+  provide let accept = (listener: TcpListener) => {
+    let listenerId = WasmI64.load(WasmI32.fromGrain(listener), 8n)
+
+    let err = Networking.tcpAccept(listenerId, _ID_PTR, _DNS_ITERATOR_PTR)
+    return if (WasmI32.eqz(err)) {
+      Ok(
+        WasmI32.toGrain(
+          DataStructures.newUint64(WasmI64.load(_ID_PTR, 0n))
+        ): TcpStream
+      )
+    } else {
+      Err(FailedToAcceptConnection)
+    }
+  }
+
+  @unsafe
+  let _BYTES_AFFECTED_PTR = Memory.malloc(8n)
+  @unsafe
+  let _SINGLE_IOV = Memory.malloc(8n)
+
+  @unsafe
+  provide let read = (stream: TcpStream, buffer: Bytes) => {
+    from WasmI32 use { add as (+) }
+
+    let streamId = WasmI64.load(WasmI32.fromGrain(stream), 8n)
+    let mut bufPtr = WasmI32.fromGrain(buffer)
+    let bufSize = WasmI32.load(bufPtr, 4n)
+    bufPtr += 8n
+
+    let err = Networking.tcpRead(streamId, bufPtr, bufSize, _BYTES_AFFECTED_PTR)
+    match (err) {
+      0n => {
+        let bytesRead = WasmI32.wrapI64(WasmI64.load(_BYTES_AFFECTED_PTR, 0n))
+        Ok(DataStructures.tagSimpleNumber(bytesRead))
+      },
+      1n => Err(TcpSocketClosed),
+      _ => Err(TcpTimeout),
+    }
+  }
+
+  @unsafe
+  provide let write = (stream: TcpStream, buffer: Bytes) => {
+    from WasmI32 use { add as (+) }
+
+    let streamId = WasmI64.load(WasmI32.fromGrain(stream), 8n)
+    let mut bufPtr = WasmI32.fromGrain(buffer)
+    let bufSize = WasmI32.load(bufPtr, 4n)
+    bufPtr += 8n
+
+    WasmI32.store(_SINGLE_IOV, bufPtr, 0n)
+    WasmI32.store(_SINGLE_IOV, bufSize, 4n)
+
+    let err = Networking.tcpWriteVectored(
+      streamId,
+      _SINGLE_IOV,
+      1n,
+      _BYTES_AFFECTED_PTR
+    )
+    match (err) {
+      0n => {
+        let bytesWritten = WasmI32.wrapI64(
+          WasmI64.load(_BYTES_AFFECTED_PTR, 0n)
+        )
+        Ok(DataStructures.tagSimpleNumber(bytesWritten))
+      },
+      1n => Err(TcpSocketClosed),
+      _ => Err(TcpTimeout),
+    }
+  }
+
+  provide let writeString = (stream, string: String) => {
+    write(stream, magic(string))
+  }
+
+  @unsafe
+  provide let clone = (stream: TcpStream) => {
+    let streamId = WasmI64.load(WasmI32.fromGrain(stream), 8n)
+    let newId = Networking.cloneTcpStream(streamId)
+    WasmI32.toGrain(DataStructures.newUint64(newId)): TcpStream
+  }
+
+  @unsafe
+  provide let flush = (stream: TcpStream) => {
+    let streamId = WasmI64.load(WasmI32.fromGrain(stream), 8n)
+    let err = Networking.tcpFlush(streamId, _ID_PTR)
+    match (err) {
+      0n => Ok(void),
+      _ => Err(TcpFlushFailed),
+    }
   }
 }

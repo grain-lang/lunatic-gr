@@ -1,0 +1,18 @@
+module Main
+
+include "lunatic"
+from Lunatic use { Process }
+
+@externalName("_start")
+provide let main = () => {
+  print("[main process] Hello from the main process!")
+  print("[main process] Spawning a child...")
+
+  Process.spawn(() => {
+    print("[subprocess] 👋 from spawned process!")
+  })
+
+  void
+}
+
+provide let __lunatic_bootstrap = Process.__lunatic_bootstrap

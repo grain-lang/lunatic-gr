@@ -15,5 +15,7 @@ spawn:
 	grain compile -I . --use-start-section --no-wasm-tail-call --release examples/spawn.gr
 version:	
 	grain compile -I . --use-start-section --no-wasm-tail-call --release examples/version.gr
+simpleProcess:	
+	grain compile -I . --use-start-section --no-wasm-tail-call --release examples/simpleProcess.gr
 
 .PHONY: examples hello net sleep spawn version

@@ -52,11 +52,17 @@ from Message use {
 }
 
 include "./api/registry"
+include "./net"
 
 provide record Process {
   nodeId: Int64,
   pid: Int64,
 }
+
+provide enum Resource {
+  TcpStream(Net.Tcp.TcpStream),
+}
+
 provide exception LunaticError
 provide exception ReceiveTimeout
 provide exception MarshalError(String)
@@ -123,7 +129,7 @@ let dataSize = () => {
 }
 
 @unsafe
-let send = (process: Process) => {
+let sendRaw = (process: Process) => {
   let err = send(WasmI64.load(WasmI32.fromGrain(process.pid), 8n))
   ignore(process)
   if (WasmI32.eqz(err)) {
@@ -202,7 +208,7 @@ provide let send: (Process, a, Mailbox<a>) -> Result<Void, Exception> =
   let payload = Marshal.marshal(data)
   createData(mailbox, Int64.fromNumber(Bytes.length(payload)))
   writeData(payload)
-  send(process)
+  sendRaw(process)
 }
 
 provide let receive: (?timeout: Uint64, Mailbox<a>) -> Result<a, Exception> =
@@ -216,6 +222,31 @@ provide let receive: (?timeout: Uint64, Mailbox<a>) -> Result<a, Exception> =
     readData(buf)
     Result.mapErr(msg => MarshalError(msg), Marshal.unmarshal(buf))
   }, receive(Some([mailbox]), timeout))
+}
+
+let tcpStreamMailbox = createMailbox(): Mailbox<Uint64>
+
+@unsafe
+provide let transferTcpStream = (process, stream) => {
+  createData(tcpStreamMailbox, 8L)
+  let streamId = WasmI64.load(WasmI32.fromGrain(stream), 8n)
+  let index = WasmI32.toGrain(
+    DataStructures.newUint64(Message.pushTcpStream(streamId))
+  ): Uint64
+  let payload = Marshal.marshal(index)
+  writeData(payload)
+  sendRaw(process)
+}
+
+@unsafe
+provide let takeTcpStream = () => {
+  Result.flatMap(index => {
+    let index = WasmI64.load(WasmI32.fromGrain(index), 8n)
+    let stream = WasmI32.toGrain(
+      DataStructures.newUint64(Message.takeTcpStream(index))
+    ): Net.Tcp.TcpStream
+    Ok(stream)
+  }, receive(tcpStreamMailbox))
 }
 
 @unsafe
