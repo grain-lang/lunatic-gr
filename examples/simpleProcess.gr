@@ -1,7 +1,7 @@
 module Main
 
 include "lunatic"
-from Lunatic use { Process }
+from Lunatic use { module Process }
 
 @externalName("_start")
 provide let main = () => {

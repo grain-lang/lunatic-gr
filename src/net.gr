@@ -46,7 +46,7 @@ provide module DNS {
   @unsafe
   let resolveDNSIterator = id => {
     let add = (+)
-    let (+) = WasmI32.add
+    from WasmI32 use { (+) }
 
     let mut addresses = []
 
@@ -64,8 +64,7 @@ provide module DNS {
     ) {
       let address = match (WasmI32.load(ipPointer, _TYPE_OFFSET)) {
         4n => {
-          let (<<) = WasmI32.shl
-          let (|) = WasmI32.or
+          from WasmI32 use { (<<), (|) }
 
           // These bytes are big endian, but WebAssembly is little endian
 
@@ -78,8 +77,7 @@ provide module DNS {
           IPv4(WasmI32.toGrain(DataStructures.newInt32(ip)))
         },
         6n => {
-          let (<<) = WasmI64.shl
-          let (|) = WasmI64.or
+          from WasmI64 use { (<<), (|) }
 
           // These bytes are big endian, but WebAssembly is little endian
 
@@ -138,7 +136,8 @@ provide module DNS {
 
   @unsafe
   provide let resolveTimeout = (host: String, timeout: Int64) => {
-    let hostPtr = WasmI32.add(WasmI32.fromGrain(host), 8n)
+    from WasmI32 use { (+) }
+    let hostPtr = WasmI32.fromGrain(host) + 8n
     let hostSize = WasmI32.load(WasmI32.fromGrain(host), 4n)
 
     let timeout = WasmI64.load(WasmI32.fromGrain(timeout), 8n)
@@ -181,7 +180,7 @@ provide module Tcp {
 
   @unsafe
   provide let bind = address => {
-    from WasmI32 use { add as (+) }
+    from WasmI32 use { (+) }
 
     let addresses = DNS.resolve(address)
     let ip = match (addresses) {
@@ -250,7 +249,7 @@ provide module Tcp {
 
   @unsafe
   provide let read = (stream: TcpStream, buffer: Bytes) => {
-    from WasmI32 use { add as (+) }
+    from WasmI32 use { (+) }
 
     let streamId = WasmI64.load(WasmI32.fromGrain(stream), 8n)
     let mut bufPtr = WasmI32.fromGrain(buffer)
@@ -270,7 +269,7 @@ provide module Tcp {
 
   @unsafe
   provide let write = (stream: TcpStream, buffer: Bytes) => {
-    from WasmI32 use { add as (+) }
+    from WasmI32 use { (+) }
 
     let streamId = WasmI64.load(WasmI32.fromGrain(stream), 8n)
     let mut bufPtr = WasmI32.fromGrain(buffer)

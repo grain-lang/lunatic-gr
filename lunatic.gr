@@ -4,4 +4,4 @@ include "./src/net"
 include "./src/process"
 include "./src/version"
 
-provide { Net, Process, Version }
+provide { module Net, module Process, module Version }
