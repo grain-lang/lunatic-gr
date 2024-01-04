@@ -1,7 +1,7 @@
 module Net
 
 include "lunatic"
-from Lunatic use { Net }
+from Lunatic use { module Net }
 
 provide let _start = () => {
   match (Net.DNS.resolve("google.com:80")) {

@@ -5,7 +5,7 @@ include "int64"
 include "result"
 
 include "lunatic"
-from Lunatic use { Process }
+from Lunatic use { module Process }
 
 record SomeData<a> {
   key: String,
