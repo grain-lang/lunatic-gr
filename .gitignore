@@ -1,3 +1,4 @@
 *.wasm
 *.wat
 .vscode/*.log
+.DS_Store
