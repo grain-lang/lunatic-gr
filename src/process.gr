@@ -208,8 +208,6 @@ provide let send: (Process, a, Mailbox<a>) => Result<Void, Exception> = (
   sendRaw(process)
 }
 
-// TODO(#2081): Remove formatter ignore after formatter fix is merged
-//formatter-ignore
 provide let receive: (?timeout: Uint64, Mailbox<a>) => Result<a, Exception> = (
   timeout=0xffffffffffffffffuL,
   mailbox,
