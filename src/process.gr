@@ -1,22 +1,22 @@
 module Process
 
-include "runtime/unsafe/wasmi32"
-include "runtime/unsafe/wasmi64"
-include "runtime/unsafe/conv"
-include "runtime/unsafe/memory"
-include "runtime/dataStructures"
-include "runtime/unsafe/tags"
+from "runtime/unsafe/wasmi32" include WasmI32
+from "runtime/unsafe/wasmi64" include WasmI64
+from "runtime/unsafe/conv" include Conv
+from "runtime/unsafe/memory" include Memory
+from "runtime/dataStructures" include DataStructures
+from "runtime/unsafe/tags" include Tags
 
-include "array"
-include "bytes"
-include "int64"
-include "marshal"
-include "result"
+from "array" include Array
+from "bytes" include Bytes
+from "int64" include Int64
+from "marshal" include Marshal
+from "result" include Result
 
-include "./api/distributed"
-from Distributed use { nodeId }
-include "./api/process"
-from Process use {
+from "./api/distributed.gr" include Distributed
+use Distributed.{ nodeId }
+from "./api/process.gr" include Process
+use Process.{
   compileModule,
   dropModule,
   createConfig,
@@ -39,8 +39,8 @@ from Process use {
   unlink,
   kill,
 }
-include "./api/message"
-from Message use {
+from "./api/message.gr" include Message
+use Message.{
   createData,
   writeData,
   readData,
@@ -51,8 +51,8 @@ from Message use {
   receive,
 }
 
-include "./api/registry"
-include "./net"
+from "./api/registry.gr" include Registry
+from "./net.gr" include Net
 
 provide record Process {
   nodeId: Int64,
@@ -78,7 +78,7 @@ let bootstrapMailbox: Mailbox<() => Void> = 1L
 
 @unsafe
 provide let createMailbox = () => {
-  from WasmI64 use { (+) }
+  use WasmI64.{ (+) }
   let tag = currentTag
   currentTag += 1N
   WasmI32.toGrain(DataStructures.newInt64(tag)): Mailbox<a>
@@ -96,7 +96,7 @@ let createData = (tag: Int64, capacity: Int64) => {
 
 @unsafe
 let writeData = (bytes: Bytes) => {
-  from WasmI32 use { (+) }
+  use WasmI32.{ (+) }
   let bytesPtr = WasmI32.fromGrain(bytes)
   let bytesWritten = writeData(bytesPtr + 8n, WasmI32.load(bytesPtr, 4n))
   WasmI32.toGrain(DataStructures.newInt32(bytesWritten)): Int32
@@ -104,7 +104,7 @@ let writeData = (bytes: Bytes) => {
 
 @unsafe
 let readData = (bytes: Bytes) => {
-  from WasmI32 use { (+) }
+  use WasmI32.{ (+) }
   let bytesPtr = WasmI32.fromGrain(bytes)
   let bytesRead = readData(bytesPtr + 8n, WasmI32.load(bytesPtr, 4n))
   WasmI32.toGrain(DataStructures.newInt32(bytesRead)): Int32
@@ -138,7 +138,7 @@ let sendRaw = (process: Process) => {
 
 @unsafe
 let receive = (tags: Option<List<Int64>>, timeout: Uint64) => {
-  from WasmI32 use { (*), (+) }
+  use WasmI32.{ (*), (+) }
   let tags = match (tags) {
     Some(tags) => Array.fromList(tags),
     None => [>],
@@ -197,23 +197,23 @@ provide let this = () => {
 }
 
 @unsafe
-provide let send: (Process, a, Mailbox<a>) => Result<Void, Exception> =
-  (
-    process,
-    data,
-    mailbox,
-  ) => {
+provide let send: (Process, a, Mailbox<a>) => Result<Void, Exception> = (
+  process,
+  data,
+  mailbox,
+) => {
   let payload = Marshal.marshal(data)
   createData(mailbox, Int64.fromNumber(Bytes.length(payload)))
   writeData(payload)
   sendRaw(process)
 }
 
-provide let receive: (?timeout: Uint64, Mailbox<a>) => Result<a, Exception> =
-  (
-    timeout=0xffffffffffffffffuL,
-    mailbox,
-  ) => {
+// TODO(#2081): Remove formatter ignore after formatter fix is merged
+//formatter-ignore
+provide let receive: (?timeout: Uint64, Mailbox<a>) => Result<a, Exception> = (
+  timeout=0xffffffffffffffffuL,
+  mailbox,
+) => {
   Result.flatMap((_) => {
     let size = dataSize()
     let buf = Bytes.make(Int64.toNumber(size))
@@ -249,7 +249,7 @@ provide let takeTcpStream = () => {
 
 @unsafe
 provide let spawn = (func: () => Void) => {
-  from WasmI32 use { (+) }
+  use WasmI32.{ (+) }
   let funcName = WasmI32.fromGrain("__lunatic_bootstrap")
 
   let result = spawn(
@@ -280,7 +280,7 @@ provide let spawn = (func: () => Void) => {
 
 @unsafe
 provide let register = (name: String, process: Process) => {
-  from WasmI32 use { (+) }
+  use WasmI32.{ (+) }
   let namePtr = WasmI32.fromGrain(name)
   let nameLen = WasmI32.load(namePtr, 4n)
   let namePtr = namePtr + 8n
@@ -296,7 +296,7 @@ provide let register = (name: String, process: Process) => {
 
 @unsafe
 provide let lookup = (name: String) => {
-  from WasmI32 use { (+) }
+  use WasmI32.{ (+) }
   let namePtr = WasmI32.fromGrain(name)
   let nameLen = WasmI32.load(namePtr, 4n)
   let namePtr = namePtr + 8n
@@ -316,7 +316,7 @@ provide let lookup = (name: String) => {
 
 @unsafe
 provide let deregister = (name: String) => {
-  from WasmI32 use { (+) }
+  use WasmI32.{ (+) }
   let namePtr = WasmI32.fromGrain(name)
   let nameLen = WasmI32.load(namePtr, 4n)
   let namePtr = namePtr + 8n

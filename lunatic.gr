@@ -1,7 +1,7 @@
 module Lunatic
 
-include "./src/net"
-include "./src/process"
-include "./src/version"
+from "./src/net.gr" include Net
+from "./src/process.gr" include Process
+from "./src/version.gr" include Version
 
 provide { module Net, module Process, module Version }

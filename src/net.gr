@@ -1,17 +1,17 @@
 module Net
 
-include "pervasives"
-include "runtime/unsafe/conv"
-include "runtime/unsafe/wasmi32"
-include "runtime/unsafe/wasmi64"
-include "runtime/unsafe/memory"
-include "runtime/dataStructures"
-include "runtime/numberUtils"
-include "bigint"
-include "string"
+from "pervasives" include Pervasives
+from "runtime/unsafe/conv" include Conv
+from "runtime/unsafe/wasmi32" include WasmI32
+from "runtime/unsafe/wasmi64" include WasmI64
+from "runtime/unsafe/memory" include Memory
+from "runtime/dataStructures" include DataStructures
+from "runtime/numberUtils" include NumberUtils
+from "bigint" include BigInt
+from "string" include String
 
-include "./api/message"
-include "./api/networking"
+from "./api/message.gr" include Message
+from "./api/networking.gr" include Networking
 
 provide enum IPType {
   IPv4(Uint32),
@@ -28,7 +28,7 @@ provide record IPAddress {
 primitive magic = "@magic"
 
 provide module DNS {
-  from Networking use { resolve, resolveNext, dropDnsIterator }
+  use Networking.{ resolve, resolveNext, dropDnsIterator }
 
   @unsafe
   let ipPointer = Memory.malloc(30n)
@@ -46,7 +46,7 @@ provide module DNS {
   @unsafe
   let resolveDNSIterator = id => {
     let add = (+)
-    from WasmI32 use { (+) }
+    use WasmI32.{ (+) }
 
     let mut addresses = []
 
@@ -64,7 +64,7 @@ provide module DNS {
     ) {
       let address = match (WasmI32.load(ipPointer, _TYPE_OFFSET)) {
         4n => {
-          from WasmI32 use { (<<), (|) }
+          use WasmI32.{ (<<), (|) }
 
           // These bytes are big endian, but WebAssembly is little endian
 
@@ -77,7 +77,7 @@ provide module DNS {
           IPv4(WasmI32.toGrain(DataStructures.newInt32(ip)))
         },
         6n => {
-          from WasmI64 use { (<<), (|) }
+          use WasmI64.{ (<<), (|) }
 
           // These bytes are big endian, but WebAssembly is little endian
 
@@ -136,7 +136,7 @@ provide module DNS {
 
   @unsafe
   provide let resolveTimeout = (host: String, timeout: Int64) => {
-    from WasmI32 use { (+) }
+    use WasmI32.{ (+) }
     let hostPtr = WasmI32.fromGrain(host) + 8n
     let hostSize = WasmI32.load(WasmI32.fromGrain(host), 4n)
 
@@ -180,7 +180,7 @@ provide module Tcp {
 
   @unsafe
   provide let bind = address => {
-    from WasmI32 use { (+) }
+    use WasmI32.{ (+) }
 
     let addresses = DNS.resolve(address)
     let ip = match (addresses) {
@@ -217,9 +217,8 @@ provide module Tcp {
 
     return if (WasmI32.eqz(err)) {
       Ok(
-        WasmI32.toGrain(
-          DataStructures.newUint64(WasmI64.load(_ID_PTR, 0n))
-        ): TcpListener
+        WasmI32.toGrain(DataStructures.newUint64(WasmI64.load(_ID_PTR, 0n))):
+          TcpListener,
       )
     } else {
       Err(FailedToBind)
@@ -233,9 +232,8 @@ provide module Tcp {
     let err = Networking.tcpAccept(listenerId, _ID_PTR, _DNS_ITERATOR_PTR)
     return if (WasmI32.eqz(err)) {
       Ok(
-        WasmI32.toGrain(
-          DataStructures.newUint64(WasmI64.load(_ID_PTR, 0n))
-        ): TcpStream
+        WasmI32.toGrain(DataStructures.newUint64(WasmI64.load(_ID_PTR, 0n))):
+          TcpStream,
       )
     } else {
       Err(FailedToAcceptConnection)
@@ -249,7 +247,7 @@ provide module Tcp {
 
   @unsafe
   provide let read = (stream: TcpStream, buffer: Bytes) => {
-    from WasmI32 use { (+) }
+    use WasmI32.{ (+) }
 
     let streamId = WasmI64.load(WasmI32.fromGrain(stream), 8n)
     let mut bufPtr = WasmI32.fromGrain(buffer)
@@ -269,7 +267,7 @@ provide module Tcp {
 
   @unsafe
   provide let write = (stream: TcpStream, buffer: Bytes) => {
-    from WasmI32 use { (+) }
+    use WasmI32.{ (+) }
 
     let streamId = WasmI64.load(WasmI32.fromGrain(stream), 8n)
     let mut bufPtr = WasmI32.fromGrain(buffer)
