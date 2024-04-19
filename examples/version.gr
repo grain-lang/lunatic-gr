@@ -1,7 +1,7 @@
 module Version
 
-include "lunatic"
-from Lunatic use { module Version }
+from "lunatic" include Lunatic
+use Lunatic.{ module Version }
 
 let semverString = (major, minor, patch) => {
   let (major, minor, patch) = (
@@ -15,6 +15,6 @@ let semverString = (major, minor, patch) => {
 provide let _start = () => {
   print(
     "Hello from Lunatic " ++
-    semverString(Version.major(), Version.minor(), Version.patch())
+      semverString(Version.major(), Version.minor(), Version.patch())
   )
 }

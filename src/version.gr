@@ -1,11 +1,11 @@
 module Version
 
-include "runtime/unsafe/wasmi32"
-include "runtime/dataStructures"
-from DataStructures use { newInt32 }
+from "runtime/unsafe/wasmi32" include WasmI32
+from "runtime/dataStructures" include DataStructures
+use DataStructures.{ newInt32 }
 
-include "./api/version"
-from Version use { major, minor, patch }
+from "./api/version.gr" include Version
+use Version.{ major, minor, patch }
 
 @unsafe
 provide let major = () => {

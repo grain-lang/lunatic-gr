@@ -1,11 +1,11 @@
 module Spawn
 
-include "bytes"
-include "int64"
-include "result"
+from "bytes" include Bytes
+from "int64" include Int64
+from "result" include Result
 
-include "lunatic"
-from Lunatic use { module Process }
+from "lunatic" include Lunatic
+use Lunatic.{ module Process }
 
 record SomeData<a> {
   key: String,
@@ -20,15 +20,13 @@ provide let _start = () => {
   print("[main process] Hello from the main process!")
   print("[main process] Spawning a child...")
 
-  let child = Result.unwrap(
-    Process.spawn(() => {
-      print("[subprocess] 👋 from spawned process!")
-      print("[subprocess] receiving some data...")
-      print(Result.unwrap(Process.receive(mailbox)))
-      print("[subprocess] data within the closure:")
-      print(localdata)
-    })
-  )
+  let child = Result.unwrap(Process.spawn(() => {
+    print("[subprocess] 👋 from spawned process!")
+    print("[subprocess] receiving some data...")
+    print(Result.unwrap(Process.receive(mailbox)))
+    print("[subprocess] data within the closure:")
+    print(localdata)
+  }))
 
   print("[main process] sending some data...")
 

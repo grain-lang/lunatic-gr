@@ -1,7 +1,7 @@
 module Sleep
 
-include "lunatic"
-from Lunatic use { module Process }
+from "lunatic" include Lunatic
+use Lunatic.{ module Process }
 
 provide let _start = () => {
   print("Counting...")
